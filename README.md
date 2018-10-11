@@ -47,6 +47,10 @@ To use VCF tools: need to use whole pathfile bc otherwise won't work.
 ```cp /Users/bobbiecattani/Birds/vcftools.dir/bin/vcftools
 ```
 do filtering steps - can do all on one line. Remember to use Recode - recoded all. and out
+```
+Bobbies-MacBook-Air:Birds bobbiecattani$ /Users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf WPAallMerged.vcf --maf 0.05 --recode --recode-INFO-all --out test
+```
+where test is the name for the new file.
 
 
 
