@@ -48,3 +48,9 @@ To use VCF tools: need to use whole pathfile bc otherwise won't work.
 ```
 do filtering steps - can do all on one line. Remember to use Recode - recoded all. and out
 
+
+
+R: USe PCadapt - see link. first gives PCA for pop structure. 
+first work out how many PCs explain data. 
+in graph: when line flat then more PCs don't add anything - in example its three. 
+
