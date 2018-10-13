@@ -131,12 +131,47 @@ so filtering worked in code, but first one kept 0 sites? - need to address this.
 
 
 
--> do it individually.
+-> do it individually.   
 ##MAF##
-```
-/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf WPAallMerged.vcf --maf 0.05 --recode --recode-INFO-all --out filter1
-```
 
+
+when on trying the MinQ, with a value of 30, it worked but  produced this message (as I believe we sent you earlier:) 
+After filtering, kept 69 out of 69 Individuals
+Outputting VCF file...
+After filtering, kept 0 out of a possible 125671 Sites
+No data left for analysis!
+Run Time = 2.00 seconds
+The code we used for that was: /users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filter1.recode.vcf --minQ 30 --recode --recode-INFO-all --out filter2
+
+I trialled and errored with this, (changing the value from 30 downwards to 10 etc) - at minQ 14, all data was still filtered out, as with minQ 30.   But, at minQ 13 it kept 69 of 69 individuals and 125671 of 125671 sites.  
+So, we don’t really understand how that is working, because it seems to be an all or nothing filter? Or are we doing something wrong?
+
+
+The max.missing filter (on the output from the —maf) gave the following: users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filter1.recode.vcf --max-missing 0.5--recode --recode-INFO-all --out filter.missing
+
+Parameters as interpreted:
+	--vcf filter1.recode.vcf
+	--recode-INFO-all
+	--max-missing 0.5
+	--out filter.missing
+
+After filtering, kept 69 out of 69 Individuals
+After filtering, kept 41503 out of a possible 125671 Sites
+
+
+--> DO the maf 0.05
+LEAVE THE MINQ: drop the minQ filter. It's not necessary. iPyrad (the de novo variant caller that generated the vcf file) already filters for base quality. So there must be something about the way ipyrad writes the vcf file that is not interpreted correctly by vcftools. All the bases should have a Phred quality score of >20, so don't worry about the minQ filter. 
+
+Definitely keep the maf 0.05 filter, and try out different missingness filters. Remember to look at the graph of the distribution of missingness for this. 
+
+
+
+
+#so with the MAF wuth filtered out everything that has a minor allele frequency greater than / equal to 0.05
+then the max missing Excludes sites on the basis of the proportion of missing data (defined to be between 0 and 1, where 0 allows sites that are completely missing and 1 indicates no missing data allowed). - so did this at 0.5. 
+
+```
+Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ /Users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf WPAallMerged.vcf --maf 0.05 --recode --recode-INFO-all --out filter.maf
 
 VCFtools - v0.1.13
 (C) Adam Auton and Anthony Marcketta 2009
@@ -145,125 +180,168 @@ Parameters as interpreted:
 	--vcf WPAallMerged.vcf
 	--recode-INFO-all
 	--maf 0.05
-	--out filter1
+	--out filter.maf
 	--recode
 
 After filtering, kept 69 out of 69 Individuals
 Outputting VCF file...
-#After filtering, kept 125671 out of a possible 184264 Sites#
-Run Time = 15.00 seconds
-Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ 
+After filtering, kept 125671 out of a possible 184264 Sites
 
-
-
-For the next one need to keep change the name 
-vcftools adds the .recode.vcf extension
-
-
-users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filter1.recode.vcf --minQ 30 --recode --recode-INFO-all --out filter2
+Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ /Users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filter.maf.recode.vcf --max-missing 0.5 --recode --recode-INFO-all --out filter.maxmiss
 
 VCFtools - v0.1.13
 (C) Adam Auton and Anthony Marcketta 2009
 
 Parameters as interpreted:
-	--vcf filter1.recode.vcf
+	--vcf filter.maf.recode.vcf
 	--recode-INFO-all
-	--minQ 30
-	--out filter2
+	--max-missing 0.5. #maybe need to play around with this
+	--out filter.maxmiss
 	--recode
 
 After filtering, kept 69 out of 69 Individuals
 Outputting VCF file...
-After filtering, kept 0 out of a possible 125671 Sites
-No data left for analysis!
+After filtering, kept 41503 out of a possible 125671 Sites
+Run Time = 7.00 seconds
+
+
+
+out allows you to specify the name of the output file. You can call it anything you like. I've called it file.s1 because this is the first filtering step.
+
+How much data is left after this? Note that the input file here is the output file from before. Although I've specified the name as filename.s1, vcftools adds the .recode.vcf extension. Remember to add the full name in your command.
+
+
+Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ /Users/bobbiecattani/Birds/vcftools/bin/vcftools  --vcf filter.maxmiss.recode.vcf --missing-indv
+
+VCFtools - v0.1.13
+(C) Adam Auton and Anthony Marcketta 2009
+
+Parameters as interpreted:
+	--vcf filter.maxmiss.recode.vcf
+	--missing-indv
+
+After filtering, kept 69 out of 69 Individuals
+Outputting Individual Missingness
+After filtering, kept 41503 out of a possible 41503 Sites
 Run Time = 2.00 seconds
+This creates an output called out.imiss. We can look at this like before:
+
+#this will write the whole file to your screen. You can scroll up and down using the scroll bar or up and down arrows. 
+cat out.imiss
+less out.imiss
+head out.imiss
+tail out.imiss
+
+Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ cat out.imiss
+INDV	N_DATA	N_GENOTYPES_FILTERED	N_MISS	F_MISS
+PHE079	41503	0	11046	0.266149
+PHE080	41503	0	14113	0.340048
+PHE081	41503	0	13163	0.317158
+PHE082	41503	0	14707	0.35436
+PHE083	41503	0	12407	0.298942
+PHE084	41503	0	14248	0.3433
+PHE085	41503	0	14441	0.347951
+PHE086	41503	0	16085	0.387562
+PHE087	41503	0	13994	0.33718
+PHE088	41503	0	12165	0.293111
+PHE089	41503	0	8619	0.207672
+PHE090	41503	0	9387	0.226176
+PHE091	41503	0	9918	0.238971
+PHE092	41503	0	10137	0.244247
+PHE093	41503	0	13571	0.326988
+PHE094	41503	0	15171	0.36554
+PHE095	41503	0	14930	0.359733
+PHE100	41503	0	12312	0.296653
+PHE101	41503	0	15666	0.377467
+PHE102	41503	0	17443	0.420283
+PHE103	41503	0	12833	0.309207
+PHE104	41503	0	16545	0.398646
+PHE105	41503	0	10651	0.256632
+PHE106	41503	0	11373	0.274028
+PHE107	41503	0	9939	0.239477
+PHE108	41503	0	14495	0.349252
+PHE109	41503	0	11119	0.267908
+PHE111	41503	0	13754	0.331398
+PHE112	41503	0	14155	0.34106
+PHE113	41503	0	10835	0.261065
+PHE113.control1	41503	0	18681	0.450112
+PHE113.control2	41503	0	16888	0.40691
+PHE113.control3	41503	0	22428	0.540395
+PHE116	41503	0	9479	0.228393
+PHE126	41503	0	15545	0.374551
+PHE127	41503	0	8476	0.204226
+PHE133	41503	0	22172	0.534226
+PHE134	41503	0	27970	0.673927
+PHE135	41503	0	23522	0.566754
+PHE136	41503	0	17108	0.412211
+PHE137	41503	0	29976	0.722261
+PHE138	41503	0	17538	0.422572
+PHE139	41503	0	10592	0.25521
+PHE140	41503	0	6115	0.147339
+PHE141	41503	0	2862	0.0689589
+PHE142	41503	0	2954	0.0711756
+PHE143	41503	0	3108	0.0748862
+PHE144	41503	0	3977	0.0958244
+PHE145	41503	0	9041	0.21784
+PHE146	41503	0	6342	0.152808
+PHE147	41503	0	8491	0.204588
+PHE148	41503	0	7486	0.180373
+PHE149	41503	0	2999	0.0722598
+PHE150	41503	0	3727	0.0898007
+PHE150a	41503	0	7601	0.183143
+PHE150b	41503	0	6716	0.16182
+PHE150c	41503	0	7195	0.173361
+PHE151	41503	0	4793	0.115486
+PHE152	41503	0	4999	0.120449
+PHE153	41503	0	4230	0.10192
+PHE154	41503	0	7150	0.172277
+PHE155	41503	0	4593	0.110667
+PHE156	41503	0	13049	0.314411
+PHE157	41503	0	7763	0.187047
+PHE158	41503	0	4738	0.11416
+PHE159	41503	0	4520	0.108908
+PHE160	41503	0	7601	0.183143
+PHE161	41503	0	9427	0.22714
+PHE162	41503	0	4368	0.105245
 Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ 
 
-
-
-## min Q 20 still filters everything out##
-Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ /users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filter1.recode.vcf --minQ 20 --recode --recode-INFO-all --out filter2.a
-
-VCFtools - v0.1.13
-(C) Adam Auton and Anthony Marcketta 2009
-
-Parameters as interpreted:
-	--vcf filter1.recode.vcf
-	--recode-INFO-all
-	--minQ 20
-	--out filter2.a
-	--recode
-
-After filtering, kept 69 out of 69 Individuals
-Outputting VCF file...
-After filtering, kept 0 out of a possible 125671 Sites
-No data left for analysis!
-Run Time = 1.00 seconds
-
-## minq 10 doesn't seem to do anything - all files are kept
-
-Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ /users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filter1.recode.vcf --minQ 10 --recode --recode-INFO-all --out filter2b
-
-VCFtools - v0.1.13
-(C) Adam Auton and Anthony Marcketta 2009
-
-Parameters as interpreted:
-	--vcf filter1.recode.vcf
-	--recode-INFO-all
-	--minQ 10
-	--out filter2b
-	--recode
-
-After filtering, kept 69 out of 69 Individuals
-Outputting VCF file...
-After filtering, kept 125671 out of a possible 125671 Sites
-Run Time = 12.00 seconds
-Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ 
-Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ 
-
-
-## min Q 15 still gets rid of everything as well, as does 14)
-
-
-/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filter1.recode.vcf --minQ 15 --recode --recode-INFO-all --out filter2c
--After filtering, kept 0 out of a possible 125671 Sites
-
-
-but min Q 13 keeps everything  /users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filter1.recode.vcf --minQ 13 --recode --recode-INFO-all --out filter2c
-
-VCFtools - v0.1.13
-(C) Adam Auton and Anthony Marcketta 2009
-
-Parameters as interpreted:
-	--vcf filter1.recode.vcf
-	--recode-INFO-all
-	--minQ 13
-	--out filter2c
-	--recode
-
-After filtering, kept 69 out of 69 Individuals
-Outputting VCF file...
-
-
-After filtering, kept 125671 out of a possible 125671 Sites
+```
 
 
 
-#MAX MISSING 
-Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ /users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filter1.recode.vcf --max-missing 0.5--recode --recode-INFO-all --out filter3
-
-VCFtools - v0.1.13
-(C) Adam Auton and Anthony Marcketta 2009
-
-Parameters as interpreted:
-	--vcf filter1.recode.vcf
-	--recode-INFO-all
-	--max-missing 0.5
-	--out filter3
-
-After filtering, kept 69 out of 69 Individuals
-## After filtering, kept 41503 out of a possible 125671 Sites
-Run Time = 3.00 seconds
-Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ 
+You can look up what the headers mean in the vcftools manual. What we're interested in is the F_MISS column. This tells us the proportion of missing data for that individual.
 
 
+The N_MISS column is the number of sites the individual does not have any data for. The F_MISS column is the frequency of missing data for that individual (N_MISS / TOTAL SITES).
+
+-> DRAW A HISTOGRAM of the F_miss column 
+
+##first need to instal gnuplot. 
+Install the App
+
+Press Command+Space and type Terminal and press enter/return key.
+Run in Terminal app:
+ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" < /dev/null 2> /dev/null
+and press enter/return key. 
+If the screen prompts you to enter a password, please enter your Mac's user password to continue. When you type the password, it won't be displayed on screen, but the system would accept it. So just type your password and press ENTER/RETURN key. Then wait for the command to finish.
+Run:
+brew install gnuplot
+Done! You can now use gnuplot.
+not sure if below is meant to be mawk (as alex had, but that doesn't seem to work, apparently awk works)
+```
+awk '!/IN/' out.imiss | cut -f5 > totalmissing
+gnuplot << \EOF 
+set terminal dumb size 120, 30
+set autoscale 
+unset label
+set title "Histogram of % missing data per individual"
+set ylabel "Number of Occurrences"
+set xlabel "% of missing data"
+#set yr [0:100000]
+binwidth=0.01
+bin(x,width)=width*floor(x/width) + binwidth/2.0
+plot 'totalmissing' using (bin($1,binwidth)):(1.0) smooth freq with boxes
+pause -1
+EOF
+```
+-> plots a histogram. 
