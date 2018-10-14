@@ -1,0 +1,34 @@
+using PCAdapt
+https://cran.r-project.org/web/packages/pcadapt/vignettes/pcadapt.html
+install.packages("pcadapt")
+
+
+library(pcadapt)
+
+#reading the genotype data: converting it into the BED format#
+path_to_file <-"/Users/bobbiecattani/Birds/vcftools/filename.final.recode.vcf"
+filename <- read.pcadapt(path_to_file, type = "vcf")
+
+#use read.pcadapt to convert the bed example to the pcadapt format.#
+path_to_file <- system.file("extdata", "geno3pops.bed", package = "pcadapt")
+filename <- read.pcadapt(path_to_file, type = "bed")
+#The pcadapt function performs two successive tasks. First, PCA is performed on the centered and scaled genotype matrix. The second stage consists in computing test statistics and p-values based on the correlations between SNPs and the first K principal components (PCs). To run the function pcadapt, the user should specify the output returned by the function read.pcadapt and the number K of principal components to compute. To choose K, principal component analysis should first be performed with a large enough number of principal components (e.g. K=20).#
+x <- pcadapt(input = filename, K = 20) 
+#NB: by default, data are assumed to be diploid. To specify the ploidy, use the argument ploidy (ploidy=2 for diploid species and ploidy = 1 for haploid species) in the pcadapt function.#
+#The ‘scree plot’ displays in decreasing order the percentage of variance explained by each PC. Up to a constant, it corresponds to the eigenvalues in decreasing order. The ideal pattern in a scree plot is a steep curve followed by a bend and a straight line. The eigenvalues that correspond to random variation lie on a straight line whereas the ones that correspond to population structure lie on a steep curve. We recommend to keep PCs that correspond to eigenvalues to the left of the straight line (Cattell’s rule). In the provided example, K = 2 is the optimal choice for K. The plot function displays a scree plot:#
+plot(x, option = "screeplot")
+
+#By default, the number of principal components shown in the scree plot is K, but it can be reduced via the argument K.#
+
+plot(x, option = "screeplot", K = 10)
+## all the plots seem to be the same as in the example -> not sure if this is right?
+
+#Another option to choose the number of PCs is based on the ‘score plot’ that displays population structure. The score plot displays the projections of the individuals onto the specified principal components. Using the score plot, the choice of K can be limited to the values of K that correspond to a relevant level of population structure. When population labels are known, individuals of the same populations can be displayed with the same color using the pop argument, which should contain the list of indices of the populations of origin. In the geno3pops example, the first population is composed of the first 50 individuals, the second population of the next 50 individuals, and so on. Thus, a vector of indices or characters (population names) that can be provided to the argument pop should look like this:#
+# With integers
+poplist.int <- c(rep(1, 50), rep(2, 50), rep(3, 50))
+# With names
+poplist.names <- c(rep("POP1", 50),rep("POP2", 50),rep("POP3", 50))
+print(poplist.int)
+print(poplist.names)
+
+## we need to know if we have different populations + the number of individuals"
