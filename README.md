@@ -345,3 +345,45 @@ pause -1
 EOF
 ```
 -> plots a histogram. 
+
+
+awk '$5 > 0.5' out.imiss | cut -f1 > lowDP.indv
+Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ 
+Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ #we can look at this like before
+Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ cat lowDP.indv
+INDV
+PHE113.control3
+PHE133
+PHE134
+PHE135
+PHE137
+Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ 
+Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ #and we can count the number of indivs we'll lose
+Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ cat lowDP.indv |wc -l
+       6
+
+
+
+#we can remove individuals from the file: 
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filter.maxmiss.recode.vcf --remove lowDP.indv --recode --recode-INFO-all --out filename.final
+
+VCFtools - v0.1.13
+(C) Adam Auton and Anthony Marcketta 2009
+
+Parameters as interpreted:
+	--vcf filter.maxmiss.recode.vcf
+	--exclude lowDP.indv
+	--recode-INFO-all
+	--out filename.final
+	--recode
+
+Excluding individuals in 'exclude' list
+After filtering, kept 64 out of 69 Individuals
+Outputting VCF file...
+After filtering, kept 41503 out of a possible 41503 Sites
+Run Time = 5.00 seconds
+Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ 
+Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ #and see what your data look like now
+Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ /users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filename.final.recode.vcf
+
+-> filtered. 
