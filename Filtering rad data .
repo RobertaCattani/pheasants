@@ -387,3 +387,22 @@ Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ #and see what your data look lik
 Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ /users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filename.final.recode.vcf
 
 -> filtered. 
+
+trying out the THIN filter
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filename.final.recode.vcf --thin 300 --recode --recode-INFO-all --out thinfilter
+
+VCFtools - v0.1.13
+(C) Adam Auton and Anthony Marcketta 2009
+
+Parameters as interpreted:
+	--vcf filename.final.recode.vcf
+	--recode-INFO-all
+	--thin 300
+	--out thinfilter
+	--recode
+After filtering, kept 64 out of 64 Individuals
+Outputting VCF file...
+After filtering, kept 5808 out of a possible 41503 Sites
+Run Time = 1.00 seconds
+Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ 
+
