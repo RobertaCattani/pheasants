@@ -33,5 +33,17 @@ plot(x, option = "scores", pop = poplist.names)
   
   
   See what scores + loadings mean. 
- . 
+ . sumary (x)
+ K = number of principle components. 
+ scores            1280 -none- numeric - scores is a (n,K) matrix corresponding to the projections of the individuals onto each PC.
+singular.values     20 -none- numeric - vector containing the K ordered squared root of the proportion of variance explained by each PC.
+loadings        830060 -none- numeric - a (L,K) matrix containing the correlations between each genetic marker and each PC.
+zscores         830060 -none- numeric - a (L,K) matrix containing the z-scores.
+af               41503 -none- numeric - a vector of size L containing allele frequencies of derived alleles where genotypes of 0 are supposed to code for homozygous for the reference allele.
+maf              41503 -none- numeric   - a vector of size L containing minor allele frequencies
+chi2.stat        41503 -none- numeric - . a vector of size L containing the rescaled statistics stat/gif that follow a chi-squared distribution with K degrees of freedom.
+stat             41503 -none- numeric - a vector of size L containing squared Mahalanobis distances by default
+gif                  1 -none- numeric - is a numerical value corresponding to the genomic inflation factor estimated from stat.
+pvalues          41503 -none- numeric - a vector containing L p-values.
+pass             40992 -none- numeric - A list of SNPs indices that are kept after exclusion based on the minor allele frequency threshold.
                     
