@@ -47,3 +47,43 @@ gif                  1 -none- numeric - is a numerical value corresponding to th
 pvalues          41503 -none- numeric - a vector containing L p-values.
 pass             40992 -none- numeric - A list of SNPs indices that are kept after exclusion based on the minor allele frequency threshold.
                     
+                    
+                    
+                    
+                    
+                    #trying it again with the thin filter thing #
+path_to_file <-"/Users/bobbiecattani/Birds/vcftools/thinfilter.recode.vcf"
+filename2 <- read.pcadapt(path_to_file, type = "vcf")
+z <- pcadapt(input = filename2, K = 20) 
+#NB: by default, data are assumed to be diploid. To specify the ploidy, use the argument ploidy (ploidy=2 for diploid species and ploidy = 1 for haploid species) in the pcadapt function.#
+#The ‘scree plot’ displays in decreasing order the percentage of variance explained by each PC. Up to a constant, it corresponds to the eigenvalues in decreasing order. The ideal pattern in a scree plot is a steep curve followed by a bend and a straight line. The eigenvalues that correspond to random variation lie on a straight line whereas the ones that correspond to population structure lie on a steep curve. We recommend to keep PCs that correspond to eigenvalues to the left of the straight line (Cattell’s rule). In the provided example, K = 2 is the optimal choice for K. The plot function displays a scree plot:#
+plot(z, option = "screeplot")
+poplist.csv <- read.csv("/Users/bobbiecattani/Birds/speciespheasant.csv", header=TRUE)
+poplist.names <-poplist.csv[,7]
+plot(z, option = "scores", pop = poplist.names)
+
+##ADEGENET#
+
+
+For adegenet the easiest might be to read the file in from structure format. I've converted your vcf file to structure using pgdspider. Attached is the input file. 
+
+Use the code below to read it in. This should create a genind object which you can run the adegenet commands on. 
+
+
+file <- read.structure("finalname.final.recode.str")
+
+ How many genotypes are there? 64
+
+ How many markers are there? 41503
+
+ Which column contains labels for genotypes ('0' if absent)? 1
+
+ Which column contains the population factor ('0' if absent)? 2
+
+ Which other optional columns should be read (press 'return' when done)? 1: 
+
+ Which row contains the marker names ('0' if absent)? 1
+
+ Are genotypes coded by a single row (y/n)? n
+
+ Converting data from a STRUCTURE .stru file to a genind object..
