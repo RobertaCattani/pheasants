@@ -87,3 +87,102 @@ file <- read.structure("finalname.final.recode.str")
  Are genotypes coded by a single row (y/n)? n
 
  Converting data from a STRUCTURE .stru file to a genind object..
+
+
+
+birds <- read.structure("/Users/aminachabach/Project/finalname.final.recode.str")
+#type number in the console bit: Output = (btw toook absolutely ages to load???)
+
+#/// GENIND OBJECT /////////
+
+#// 64 individuals; 41,503 loci; 83,436 alleles; size: 42.4 Mb
+
+#// Basic content
+#@tab:  64 x 83436 matrix of allele counts
+#@loc.n.all: number of alleles per locus (range: 2-4)
+#@loc.fac: locus factor for the 83436 columns of @tab
+#@all.names: list of allele names for each locus
+#@ploidy: ploidy of each individual  (range: 2-2)
+#@type:  codom
+#@call: read.structure(file = "/Users/aminachabach/Project/finalname.final.recode.str")
+
+#// Optional content
+#@pop: population of each individual (group size range: 2-22)
+data(birds)
+#still doesn't work btw
+
+phepop <- genind2genpop(birds)
+phepop
+#As in genind objects, data are stored as numbers of alleles, but this time for populations #(here, phe colonies): 5 rows & 10 colums
+
+phepop$tab[1:5,1:10]
+3.3 Using accessors
+
+#One advantage of formal (S4) classes is that they allow for interacting simply with possibly complex objects. This is made possible by using accessors, i.e. functions that extract information from an object, rather than accessing the slots directly. Another advantage of this approach is that as long as accessors remain identical on the user’s side, the internal structure of an object may change from one release to another without generating errors in old scripts. Although genind and genpop objects are fairly simple, we recommend using accessors whenever possible to access or modify their content.
+
+(#nancycats=birds in my code)
+
+#indNames†: returns/sets labels for individuals; only for genind.
+
+head(indNames(file),10)
+#nInd: returns the number of individuals in the object; only for genind. #DONT'T RUN OUR NAMES ARE FINE AS THEY ARE
+
+indNames(birds) <- paste("cat", 1:nInd(birds),sep=".")
+head(indNames(birds),10)
+#locNames: returns/sets labels for l
+
+locNames(birds)
+#returns the names of the alleles in the form ’loci.allele’.
+
+temp <- locNames(birds, withAlleles=TRUE)
+head(temp, 10)
+#The slot ’pop’ can be retrieved and set using pop:
+
+obj <- birds[sample(1:50,10)]
+pop(obj)
+# [1] 2 1 5 1 2 2 3 2 1 1
+#Levels: 1 2 3 5
+
+pop(obj) <- rep("newPop",10)
+pop(obj)
+#Accessors make things easier. For instance, when setting new names for loci, the columns #of @tab are renamed automatically:
+
+head(colnames(tab(obj)),20)
+
+locNames(obj)
+
+locNames(obj)[1] <- "newLocusName"
+locNames(obj)
+
+head(colnames(tab(obj)),20)
+
+obj@pop <- rep("newPop",10)
+5.4 Measuring and testing population structure (a.k.a F statistics)
+
+library(devtools)
+install_github("jgx65/hierfstat")
+#Haven't actually installed this, do we even need it bc the net line runs?
+
+#Can we find any population structure in the pheasent colonies? The basic F statistics are provided by:
+
+library("hierfstat")
+fstat(birds)
+#This table provides the three F statistics F st (pop/total), F it (Ind/total), and F is #(ind/pop). These are overall measures which take into account all genotypes and all loci. #For more detail, pegas provides estimates by locus:
+
+#This table provides the three F statistics F st (pop/total), F it (Ind/total), and F is #(ind/pop). These are overall measures which take into account all genotypes and all loci.
+
+	pop       Ind
+Total 0.7958457 0.8203680
+pop   0.0000000 0.1201165
+#SO: FST = 0.7958457; FIT = 0.8203680; FIS = 0.1201165
+
+#The measures FIS, FST, and FIT are related to the amounts of heterozygosity at various levels of population structure. Together, they are called F-statistics, and are derived from F, the inbreeding coefficient.
+
+#FIT is the inbreeding coefficient of an individual (I) relative to the total (T) population, as above; FIS is the inbreeding coefficient of an individual (I) relative to the subpopulation (S)*, using the above for subpopulations and averaging them; and FST is the effect of subpopulations (S) compared to the total population (T)
+
+#The fixation index (FST) is a measure of population differentiation due to genetic structure. It is frequently estimated from genetic polymorphism data, such as single-nucleotide polymorphisms (SNP) or microsatellites. Developed as a special case of Wright's F-statistics, it is one of the most commonly used statistics in population genetics.
+
+#For more detail, pegas provides estimates by locus:
+
+library(pegas)
+Fst(as.loci(birds))
