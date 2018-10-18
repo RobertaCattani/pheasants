@@ -396,8 +396,129 @@ then phe126 showed in the PCA to be grouping with the Mountains but it is (defin
 ```
 
 
+#create plink file
+users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filename.removed.recode.vcf --plink --out CHN.229.Neutral.plink
+
+VCFtools - v0.1.13
+(C) Adam Auton and Anthony Marcketta 2009
+
+Parameters as interpreted:
+	--vcf filename.removed.recode.vcf
+	--out CHN.229.Neutral.plink
+	--plink
+
+After filtering, kept 63 out of 63 Individuals
+Writing PLINK PED and MAP files ... 
+
+Unrecognized values used for CHROM: locus_7 - Replacing with 0.
+
+Unrecognized values used for CHROM: locus_9 - Replacing with 0.
+	PLINK: Only outputting biallelic loci.
+
+Unrecognized values used for CHROM: locus_17 - Replacing with 0.
 
 
+
+
+
+##HARDY
+```
+/users/bobbiecattani/Birds/vcftools/plink --file CHN.229.Neutral.plink --hwe 0.001
+```
+
+@----------------------------------------------------------@
+|        PLINK!       |     v1.07      |   10/Aug/2009     |
+|----------------------------------------------------------|
+|  (C) 2009 Shaun Purcell, GNU General Public License, v2  |
+|----------------------------------------------------------|
+|  For documentation, citation & bug-report instructions:  |
+|        http://pngu.mgh.harvard.edu/purcell/plink/        |
+@----------------------------------------------------------@
+
+Web-based version check ( --noweb to skip )
+Recent cached web-check found...Problem connecting to web
+
+Writing this text to log file [ plink.log ]
+Analysis started: Thu Oct 18 15:33:32 2018
+
+Options in effect:
+	--file CHN.229.Neutral.plink
+	--hwe 0.001
+
+41081 (of 41081) markers to be included from [ CHN.229.Neutral.plink.map ]
+Warning, found 63 individuals with ambiguous sex codes
+These individuals will be set to missing ( or use --allow-no-sex )
+Writing list of these individuals to [ plink.nosex ]
+63 individuals read from [ CHN.229.Neutral.plink.ped ] 
+0 individuals with nonmissing phenotypes
+Assuming a disease phenotype (1=unaff, 2=aff, 0=miss)
+Missing phenotype value is also -9
+0 cases, 0 controls and 63 missing
+0 males, 0 females, and 63 of unspecified sex
+Before frequency and genotyping pruning, there are 41081 SNPs
+63 founders and 0 non-founders found
+27447 markers to be excluded based on HWE test ( p <= 0.001 )
+	0 markers failed HWE test in cases
+	0 markers failed HWE test in controls
+Total genotyping rate in remaining individuals is 0.753766
+0 SNPs failed missingness test ( GENO > 1 )
+0 SNPs failed frequency test ( MAF < 0 )
+After frequency and genotyping pruning, there are 13634 SNPs
+After filtering, 0 cases, 0 controls and 63 missing
+After filtering, 0 males, 0 females, and 63 of unspecified sex
+
+Analysis finished: Thu Oct 18 15:33:36 2018
+
+```
+/Users/bobbiecattani/Birds/vcftools/plink --file CHN.229.Neutral.plink --hardy
+```
+
+Writing Hardy-Weinberg tests (founders-only) to [ plink.hwe ] 
+27447 markers to be excluded based on HWE test ( p <= 0.001 )
+after frequency and genotyping pruning, there are 13634 SNPs
+After filtering, 0 cases, 0 controls and 63 missing
+After filtering, 0 males, 0 females, and 63 of unspecified sex
+
+
+#picked 0.001 because needed a cut off: signficiant deviation from HWE suggests errors in genotyping; so any higher + we'd risk getting rid of data that isn't due to error; lower (e..g. 1x10e-5), we may keep data that is due to error. WE have done the other analyses so quite sure most errors have been filtered out which is why we selected this level. 
+#need to remove the 27447 now 
+
+
+awk '$9 <0.001' plink.hwe | cut -f1 > plinkfilter 
+# is it more than or less than <0.001.??? #
+using less tha: 
+#and we can count the number of indivs we'll lose
+cat plinkfilter |wc -l
+   27447
+
+Sites with a p-value below the threshold defined by this option are taken to be out of HWE, and therefore excluded.
+so now remove them:
+
+/Users/bobbiecattani/Birds/vcftools/plink --file plink.hwe --remove plinkfilter --recode --recode-INFO-all -out plink.final
+
+/Users/bobbiecattani/Birds/vcftools/plink --file plink.hwe --remove plinkfilter --out plink.final. 
+
+
+ #did't work: no file plink.hwe.ped exists -- need to change data formate or just not right?
+ 
+ 
+ 
+ Unlike PLINK 1.07, PLINK 1.9 does not automatically filter out variants with H-W p-value less than 0.001 when --hardy is invoked. Combine --hardy with --hwe if you still want that to happen.
+-> repeat like this?
+/Users/bobbiecattani/Birds/vcftools/plink --file CHN.229.Neutral.plink --hardy --hwe 0.001
+
+
+or what if just do in VCF?
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filename.removed.recode.vcf --hwe 0.001 --recode --recode-INFO-all --out HWvcf
+
+After filtering, kept 63 out of 63 Individuals
+Outputting VCF file...
+After filtering, kept 13634 out of a possible 41503 Sites
+-> this is the same result as the plink one. 
+
+head HWvcf.recode.vcf
+
+--> then will need to subset this using code from alex's email? i think. 
 
 
 [[[]]
