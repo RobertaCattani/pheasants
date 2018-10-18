@@ -388,6 +388,19 @@ Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ /users/bobbiecattani/Birds/vcfto
 
 -> filtered. 
 
+then phe126 showed in the PCA to be grouping with the Mountains but it is (definitely) a Malaysian. 
+-> remove that indivdual
+
+```
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --remove-indv PHE126 --vcf filename.final.recode.vcf --out filename.removed.vcf
+```
+
+
+
+
+
+
+[[[]]
 trying out the THIN filter
 /users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filename.final.recode.vcf --thin 300 --recode --recode-INFO-all --out thinfilter
 
