@@ -520,6 +520,39 @@ head HWvcf.recode.vcf
 
 --> then will need to subset this using code from alex's email? i think. 
 
+#reading into r to check + for practice (will need this for pcadapt)
+testHW <-"/Users/bobbiecattani/Birds/vcftools/HWvcf.recode.vcf"
+hardytest<- read.pcadapt(testHW, type = "vcf")
+
+-> but need to subset before you do this I think. might be good to check PCA though + See it all looks ok. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 [[[]]
 trying out the THIN filter
