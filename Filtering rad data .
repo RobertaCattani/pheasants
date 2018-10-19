@@ -394,6 +394,7 @@ then phe126 showed in the PCA to be grouping with the Mountains but it is (defin
 ```
 /users/bobbiecattani/Birds/vcftools/bin/vcftools --remove-indv PHE126 --vcf filename.final.recode.vcf --out filename.removed.vcf
 ```
+also need to remove 127
 
 
 #create plink file
@@ -518,7 +519,26 @@ After filtering, kept 13634 out of a possible 41503 Sites
 
 head HWvcf.recode.vcf
 
---> then will need to subset this using code from alex's email? i think. 
+##HET didn't fitler anything. 
+```
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf HWvcf.recode.vcf --het
+
+VCFtools - v0.1.13
+(C) Adam Auton and Anthony Marcketta 2009
+
+Parameters as interpreted:
+	--vcf HWvcf.recode.vcf
+	--het
+
+After filtering, kept 63 out of 63 Individuals
+Outputting Individual Heterozygosity
+After filtering, kept 13634 out of a possible 13634 Sites
+```
+
+
+--> then will need to subset this using code from alex's email? i think.
+
+
 
 #reading into r to check + for practice (will need this for pcadapt)
 testHW <-"/Users/bobbiecattani/Birds/vcftools/HWvcf.recode.vcf"
@@ -530,10 +550,26 @@ hardytest<- read.pcadapt(testHW, type = "vcf")
 
 
 
+##subsetting 
+
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf HWvcf.recode.vcf --plink --out CHN.229.Neutral.plink
+
+#mport the .map file into R to get a list of the SNP names and to subset this to 1000 random names
+CHN.Neutral.loci.names.map <- read.table("CHN.229.Neutral.plink.map", header=F)
+CHN.Neutral.loci.names <-  CHN.Neutral.loci.names.map$V2
+CHN.Neutral.loci.names <- as.data.frame(CHN.Neutral.loci.names)
+CHN.1000.loci.names <- CHN.Neutral.loci.names[sample(nrow(CHN.Neutral.loci.names),1000),]
+CHN.1000.loci.names <- as.data.frame(CHN.1000.loci.names)
+summary(CHN.1000.loci.names)
+write.table(CHN.1000.loci.names, "CHN.1000.loci.names", quote=F, row.names=F, col.names=F)
 
 
 
+Subset the vcf file to get 1000 loci
 
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf HWvcf.recode.vcf --snps CHN.1000.loci.names --recode --recode-INFO-all --out CHN.1000Neutral
+
+-> not working: keeps 0 files out of 13600. 
 
 
 
