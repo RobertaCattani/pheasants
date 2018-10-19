@@ -16,7 +16,7 @@ write.table(CHN.1000.loci.names, "CHN.1000.loci.names", quote=F, row.names=F, co
 
 Subset the vcf file to get 1000 loci
 
-/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filename.final.recode.vcf --snps CHN.1000.loci.names --recode --recode-INFO-all --out CHN.1000Neutral
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf HWvcf.recode.vcf --snps CHN.1000.loci.names --recode --recode-INFO-all --out CHN.1000Neutral
 
 
 
@@ -24,6 +24,10 @@ Subset the vcf file to get 1000 loci
 
 sed 's/:.*//g' CHN.1000.loci.names > CHN.1000.loci.names.2
 rm (file) means to remove it (delete it)
+
+## in R its Locus_number:indv; in VCF its locus_25 indv
+sed 's/: / /g' CHN.1000.loci.names > CHN.1000.loci.names.2
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf HWvcf.recode.vcf --snps CHN.1000.loci.names.2 --recode --recode-INFO-all --out CHN.1000Neutral
 
 
 #PLINK
