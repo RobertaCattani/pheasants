@@ -1,0 +1,129 @@
+ORDER:
+
+1.	MAF (get rid of hetero / missingness
+2.	Missingness
+3.	MAF again – because allele freqs would have changed
+4.	HET (plink) 
+5.	Thin – pop structure genomes. Need to remove linked loci – prob still remove, but measures of inbreeding don’t want it. 
+
+→ create data set 1-4, then another for 5 i.e. different input sets. 
+
+HWE not expected nc just some indvs from same sp from diff breders)
+•	Decide analyses for inbreeding: what do these do to the data – important bc some filters may bias the data set
+•	HET shouldn’t be higher than 0.5 – that’s the theoretical limit. 
+
+
+#set the working directory
+```
+cd /Users/bobbiecattani/Birds
+```
+#MAF FILTER
+/Users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf WPAallMerged.vcf --maf 0.05 --recode --recode-INFO-all --out filter.maf
+
+#missingness
+```
+ /Users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filter.maf.recode.vcf --max-missing 0.5 --recode --recode-INFO-all --out filter.maxmiss
+/Users/bobbiecattani/Birds/vcftools/bin/vcftools  --vcf filter.maxmiss.recode.vcf --missing-indv
+```
+#creates output called imiss. 
+#to view data
+cat out.imiss
+#less out.imiss
+#head out.imiss
+#tail out.imiss
+
+#The N_MISS column is the number of sites the individual does not have any data for. The F_MISS column is the frequency of missing data for that individual (N_MISS / TOTAL SITES).
+
+
+##now draw histogram of F_miss column. 
+#make sure you've install gnuplot. 
+```
+Run in Terminal app:
+ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" < /dev/null 2> /dev/null
+and press enter/return key. 
+If the screen prompts you to enter a password, please enter your Mac's user password to continue. When you type the password, it won't be displayed on screen, but the system would accept it. So just type your password and press ENTER/RETURN key. Then wait for the command to finish.
+Run:
+brew install gnuplot
+Done! You can now use gnuplot.
+````
+
+##HISTOGRAM: 
+```
+awk '!/IN/' out.imiss | cut -f5 > totalmissing
+gnuplot << \EOF 
+set terminal dumb size 120, 30
+set autoscale 
+unset label
+set title "Histogram of % missing data per individual"
+set ylabel "Number of Occurrences"
+set xlabel "% of missing data"
+#set yr [0:100000]
+binwidth=0.01
+bin(x,width)=width*floor(x/width) + binwidth/2.0
+plot 'totalmissing' using (bin($1,binwidth)):(1.0) smooth freq with boxes
+pause -1
+EOF
+````
+
+#now want to find the indivuals with missinginness greater 0.5: then count how many you lose + then remove them. 
+
+```
+awk '$5 > 0.5' out.imiss | cut -f1 > lowDP.indv
+cat lowDP.indv |wc -l
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filter.maxmiss.recode.vcf --remove lowDP.indv --recode --recode-INFO-all --out filename.final
+```
+
+#the phe126 showed in the PCA to be grouping with the Mountains but it is (definitely) a Malaysian. -> remove that indivdual
+
+```
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --remove-indv PHE126 --vcf filename.final.recode.vcf --recode --recode-INFO-all --out filename.removed
+```
+
+
+#THEN DO MAF again
+/Users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filename.removed.recode.vcf --maf 0.05 --recode --recode-INFO-all --out maf2
+
+
+--> KEEP THIS AS ONE OUTPUT FILE. 
+
+##do a heterozygosity filter - need to create a plink file first. 
+
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf maf2.recode.vcf --plink --out myplink.data
+
+then look up instructions for HET in plink. 
+
+#heterozygosity 
+/Users/bobbiecattani/Birds/vcftools/plink --file myplink.data --het
+
+will need to filter out everything that is below 0.5 (theoretical filter). 
+
+```
+plink.hwe
+#sort the data by p value
+```
+sort -k ,9 plink.hwe  (if p value in column 9)
+```. GET RID OF THEM: 
+awk '(NR>1) && ($9 > 0.5 ) ' plink.hwe > plink.hwe.2
+Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ less plink.hwe.2
+ awk '(NR>1) && ($8 > 2 ) ' foo > bar
+where
+NR is number of record (that is number of line)
+$8 is eight field
+&& is logical and
+foo is the original file, unchanged
+bar resulting file
+implicit default action is to print the current input line
+## at the moment this doesn't work: need to know how to output from plink.hwe.2
+##need to make this file to import to R
+
+
+#THIN filter
+```
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --OUTPUTFILEFROMHET --thin 300 --recode --recode-INFO-all --out thinfilter
+```
+
+
+now not subsetting bc have a lot less data (prob under 3000)
+
+
+
