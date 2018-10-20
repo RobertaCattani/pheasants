@@ -83,28 +83,38 @@ cat lowDP.indv |wc -l
 #THEN DO MAF again
 /Users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf filename.removed.recode.vcf --maf 0.05 --recode --recode-INFO-all --out maf2
 
-
---> KEEP THIS AS ONE OUTPUT FILE. 
+##this kept 40923 of 41503.#
+##--> KEEP THIS AS ONE OUTPUT FILE. = maf2##
 
 ##do a heterozygosity filter - need to create a plink file first. 
+#remember that HET in VCF tools is just a HARDY WEINBERG (which isn't expected bc these aren't actual populations, but individuals that are owned by different people that are members of the same species. 
+ #Calculates a measure of heterozygosity on a per-individual basis. Specfically, the inbreeding coefficient, F, is estimated for each individual using a method of moments. The resulting file has the suffix ".het".
 
 /users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf maf2.recode.vcf --plink --out myplink.data
 
 then look up instructions for HET in plink. 
 
 #heterozygosity 
-/Users/bobbiecattani/Birds/vcftools/plink --file myplink.data --het
+/Users/bobbiecattani/Birds/vcftools/plink --file myplink.data.map --het
+
+/Users/bobbiecattani/Birds/vcftools/plink --file CHN.229.Neutral.plink --het
+plink --file mydata --het
 
 will need to filter out everything that is below 0.5 (theoretical filter). 
+OUTPUT: 
+40515 (of 40515) markers to be included from [ myplink.data.map ]
+Writing individual heterozygosity information to [ plink.het ]
 
+
+#sort the data by p value? Or expected??
+
+#alex said this should be in proportions but not sure?
 ```
-plink.hwe
-#sort the data by p value
+sort -k ,9 plink.het  (if p value in column 9)
+#GET RID OF THEM: 
+awk '(NR>1) && ($9 > 0.5 ) ' plink.het > plink.het.2
 ```
-sort -k ,9 plink.hwe  (if p value in column 9)
-```. GET RID OF THEM: 
-awk '(NR>1) && ($9 > 0.5 ) ' plink.hwe > plink.hwe.2
-Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ less plink.hwe.2
+Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ less plink.het.2
  awk '(NR>1) && ($8 > 2 ) ' foo > bar
 where
 NR is number of record (that is number of line)
