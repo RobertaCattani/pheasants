@@ -95,11 +95,11 @@ cat lowDP.indv |wc -l
 ```
 
 
-#heterozygosity 
+#heterozygosity  
 ```
-/Users/bobbiecattani/Birds/vcftools/plink --file myplink.data.map --het
- #output: 40515 (of 40515) markers to be included from [ myplink.data.map ]
- #Writing individual heterozygosity information to [ plink.het ]
+/Users/bobbiecattani/Birds/vcftools/plink --file myplink.data --hardy
+
+ #Writing individual heterozygosity information to [ plink.hwe ]
 ```
 
 will need to filter out everything that is below 0.5 (theoretical filter). 
@@ -111,9 +111,9 @@ OUTPUT:
 
 #alex said this should be in proportions but not sure?
 ```
-sort -k ,9 plink.het  (if p value in column 9)
+sort -k 7,7 plink.hwe  (if p value in column 9)
 #GET RID OF THEM: 
-awk '(NR>1) && ($9 > 0.5 ) ' plink.het > plink.het.2
+awk '(NR>1) && ($7 > 0.5 ) ' plink.hwe > 2plink
 Bobbies-MacBook-Air:vcftools.dir bobbiecattani$ less plink.het.2
 ```
  awk '(NR>1) && ($8 > 2 ) ' foo > bar
@@ -126,15 +126,27 @@ bar resulting file
 implicit default action is to print the current input line
 ## at the moment this doesn't work: need to know how to output from plink.hwe.2
 ##need to make this file to import to R
+## if not, then don't do this because only 5 loci so not a massive issue. 
+
+
+/Users/bobbiecattani/Birds/vcftools/plink --file plink.hwe --remove 2plink > finalplink
+
+plink --bfile Gwas.Chr20.Phased.Output \
+      --recode vcf \
+      --out Gwas.Chr20.Phased.Output.VCF.format
+
+
 
 
 #THIN filter
 ```
 /users/bobbiecattani/Birds/vcftools/bin/vcftools --OUTPUTFILEFROMHET --thin 300 --recode --recode-INFO-all --out thinfilter
 ```
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf maf2.recode.vcf --thin 300 --recode --recode-INFO-all --out thinfilter
 
-
-now not subsetting bc have a lot less data (prob under 3000)
+After filtering, kept 63 out of 63 Individuals
+Outputting VCF file...
+After filtering, kept 5802 out of a possible 40923 Sites
 
 
 
