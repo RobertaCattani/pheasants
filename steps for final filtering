@@ -102,12 +102,11 @@ cat lowDP.indv |wc -l
  #Writing individual heterozygosity information to [ plink.hwe ]
 ```
 
-will need to filter out everything that is below 0.5 (theoretical filter). 
-OUTPUT: 
+will need to filter out everything that is below 0.5 observed (theoretical filter). 
+OUTPUT:  only 6 over 0.5 s not hugely important. 
 
 
 
-#sort the data by p value? Or expected??
 
 #alex said this should be in proportions but not sure?
 ```
@@ -136,8 +135,7 @@ plink --bfile Gwas.Chr20.Phased.Output \
       --out Gwas.Chr20.Phased.Output.VCF.format
 
 
-
-
+#didn't work so not that important. 
 #THIN filter
 ```
 /users/bobbiecattani/Birds/vcftools/bin/vcftools --OUTPUTFILEFROMHET --thin 300 --recode --recode-INFO-all --out thinfilter
