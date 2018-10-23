@@ -1,0 +1,78 @@
+using PCAdapt
+````
+https://cran.r-project.org/web/packages/pcadapt/vignettes/pcadapt.html
+
+install.packages("pcadapt")
+library(pcadapt)
+```
+#reading the genotype data: converting it into the BED format#
+```
+path_to_file <-"/Users/bobbiecattani/Birds/vcftools/filename.final.recode.vcf"
+filename <- read.pcadapt(path_to_file, type = "vcf")
+```
+x <- pcadapt(input = filename, K = 20)
+
+
+plot(x, option = "screeplot", K = 10) #(or just k)
+
+
+#IMPORT  table data: #
+ 
+ poplist.csv <- read.csv("/Users/bobbiecattani/Birds/pheasantpops.csv", header=TRUE)
+head(poplist.csv)
+poplist.names <-poplist.csv[,7]
+str(poplist.names)
+plot(x, option = "scores", pop = poplist.names)
+                    
+  ##make sure you use cSV to read in.
+  
+  
+  
+  ##ADEGENET#
+
+
+For adegenet the easiest might be to read the file in from structure format. - convert using pdgspider. 
+#download http://www.cmpg.unibe.ch/software/PGDSpider/#Download_and_Installation_Instructions #
+file <- read.structure("finalname.final.recode.str")
+- then need to answer the questions: 63 individuals, 5802 loci. 
+
+Which column contains labels for genotypes ('0' if absent)? 1
+
+ Which column contains the population factor ('0' if absent)? 2
+
+ Which other optional columns should be read (press 'return' when done)? 1: 
+
+ Which row contains the marker names ('0' if absent)? 1
+
+ Are genotypes coded by a single row (y/n)? n
+
+ Converting data from a STRUCTURE .stru file to a genind object..
+ 
+ 
+ birds <- read.structure("/Users/aminachabach/Project/finalname.final.recode.str")
+ 
+ phepop <- genind2genpop(birds)
+phepop
+
+indNames†: returns/sets labels for individuals; only for genind.
+
+head(indNames(file),10)
+#nInd: returns the number of individuals in the object; only for genind. #DONT'T RUN OUR NAMES ARE FINE AS THEY ARE
+
+indNames(birds) <- paste("cat", 1:nInd(birds),sep=".")
+head(indNames(birds),10)
+
+5.4 Measuring and testing population structure (a.k.a F statistics)
+
+library(devtools)
+install_github("jgx65/hierfstat")
+#Haven't actually installed this, do we even need it bc the net line runs?
+
+#Can we find any population structure in the pheasent colonies? The basic F statistics are provided by:
+
+library("hierfstat")
+fstat(birds)
+
+ Gtest <- gstat.randtest(birds,nsim=99)
+
+
