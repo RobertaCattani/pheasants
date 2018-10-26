@@ -1,0 +1,15 @@
+ 	
+  #PCA adapt for scree plot +PCA #
+   install.packages("pcadapt")
+library(pcadapt)
+
+path_to_file <-("/Users/bobbiecattani/Birds/vcftools/thinfilter.recode.vcf")
+filename <- read.pcadapt(path_to_file, type = "vcf")
+x <- pcadapt(input = filename, K = 20) 
+plot(x, option = "screeplot", K = 10)
+
+poplist.csv <- read.csv("/Users/bobbiecattani/Birds/pheasantpops1.csv", header=TRUE)
+head(poplist.csv)
+poplist.names <-poplist.csv[,7]
+str(poplist.names)
+plot(x, option = "scores", pop = poplist.names)
