@@ -13,3 +13,18 @@ head(poplist.csv)
 poplist.names <-poplist.csv[,7]
 str(poplist.names)
 plot(x, option = "scores", pop = poplist.names)
+
+#install pgdspider (after downloading java)
+-Xmx1024m -Xms512m -jar PGDSpider2-cli.jar
+
+Using PGD spider to convert to structure format for adegenet
+```
+java -Xmx1024m -Xms512m -jar /Users/bobbiecattani/Birds/vcftools/PGDSpider2.jar
+```
+
+execute PGDSpider-cli (command line):
+
+
+#Mac and others: 
+#execute the command 
+java -Xmx1024m -Xms512m -jar /Users/bobbiecattani/Birds/vcftools/PGDSpider2-cli.jar
