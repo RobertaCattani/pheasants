@@ -147,4 +147,20 @@ Outputting VCF file...
 After filtering, kept 5802 out of a possible 40923 Sites
 
 
+we need to remove the thing
+
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf thinfilter.recode.vcf 
+
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf thinfilter.recode.vcf --remove - -recode --recode-INFO-all --out filename.removed
+
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf thinfilter.recode.vcf --indv PHE079 --indv PHE080 --recode --recode-INFO-all --out test
+
+
+
+Mountain 
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf thinfilter.recode.vcf --indv PHE079 --indv PHE088 --indv PHE089 --indv PHE090 --indv PHE091 --indv PHE092 --indv PHE116 --indv PHE136 --indv PHE138 --indv PHE141 --indv PHE142 --indv PHE143 --indv PHE144 --indv PHE149 --indv PHE150 --indv PHE153 --indv PHE154 --indv PHE155 --indv PHE158 --indv PHE159 --indv PHE161 --indv PHE162 --recode --recode-INFO-all --out mountain
+#kept 22. 
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --indv PHE080 --indv PHE081 --indv PHE082 --indv PHE083 --indv PHE084 --indv PHE085 --indv PHE086 --indv PHE087 --indv PHE112 --indv PHE100 --indv PHE126 --indv PHE127 --indv PHE133 --indv PHE134 --indv PHE139 --indv PHE140 --indv PHE145 --indv PHE146 --indv PHE147 --indv PHE148 --indv PHE156 --indv PHE157 --indv PHE160 --vcf thinfilter.recode.vcf --recode --recode-INFO-all --out Malaysian
+#kept 20
+
 
