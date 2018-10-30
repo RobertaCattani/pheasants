@@ -1,0 +1,28 @@
+library(adegenet)
+library(hierfstat)
+library(reshape)
+
+
+#read it in in structure files - convert it to genind. 
+
+MT <- read.structure("/Users/bobbiecattani/Birds/MS/msdir/MT.stru") #(22, 5802)
+
+MA <- read.structure ("/Users/bobbiecattani/Birds/MS/msdir/MA.stru") #(20, 5802)
+
+#GAVE AN ERROER
+Warning message:
+In df2genind(X = X, pop = pop, ploidy = 2, sep = sep, ncode = ncode) :
+  entirely non-type marker(s) deleted
+> THINK THIS IS WHY
+
+
+
+basic.stats(MT)  
+wc(MT)
+$overall
+    Ho     Hs     Ht    Dst    Htp   Dstp    Fst   Fstp    Fis   Dest 
+0.0640 0.0689 0.0700 0.0011 0.0683 0.0031 0.0160 0.0453 0.0707 0.0033 
+
+basic.stats(MA)  
+wc(MA)
+gave an error
