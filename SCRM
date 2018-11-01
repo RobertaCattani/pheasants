@@ -1,0 +1,40 @@
+
+citation: 
+
+Paul R. Staab, Sha Zhu, Dirk Metzler and Gerton Lunter. scrm: efficiently simulating long sequences using the approximated coalescent with recombination. Bioinformatics (2015) 31 (10): 1680-1682. doi:10.1093/bioinformatics/btu861
+
+
+
+
+1. install scrrm
+then example code
+
+```
+set.seed(789)
+#set.seed uses a single integer argument to set as many seeds as are required. It is intended as a simple way to get quite different seeds by specifying small integer arguments, and also as a way to get valid seed sets for the more complicated methods (especially "Mersenne-Twister" and "Knuth-TAOCP"). There is no guarantee that different values of seed will seed the RNG differently, although any exceptions would be extremely rare. If called with seed = NULL it re-initializes (see ‘Note’) as if no seed had yet been set.
+#The random numbers are the same, and they would continue to be the same no matter how far out in the sequence we went.
+#Tip. Use the set.seed function when running simulations to ensure all results, figures, etc are reproducible.
+
+# 5 Chromosomes with 100 bases each with recombination and mutation
+sum_stats <- scrm('5 1 -r 3.1 100 -t 1.5 -T -L') 
+#1 locus??
+#`t 1.5: mutation rate of 1.5
+# -r 3.1 - recomb rate of 3.1`
+#-L: Print the TMRCA and the local tree length for each segment (behaves different to ms). Both values are scaled in coalescent time units, e.g. in 4 * N0 generations.
+#-t < $\theta$ >: Set the mutation rate to θ=4N0u, where u is the neutral mutation rate per locus. If this options is given, scrm generates the segregating sites output.
+#-T: Print the local genealogies in newick format.
+#-r <R> <L>: Set the recombination rate to R = 4N0r and the length of all loci to L base pairs. r is expected number of recombinations on the locus per generation.
+#-l <l>: Use approximation rather than simulating the exact ARG. Within a sliding window of length l base pairs all linkage information is considered when building the genealogy. To positions outside of this window, some linkage is ignored. Setting l=0 produces the SMC’ and l=-1 deactivates the approximation. Since v1.6.0, it’s also possible to specify the window’s length in number of recombinations. To do so, use -l <x>r, where x is the number of recombinations (e.g. -l 100r for a window spanning 100 recombinations). Also starting with version 1.6.0 approximation is turned on by default using a conservative window length of 500 recombinations. For most applications, it should be fine to reduce this value to 100 - 250 recombinations if runtime is a critical factor.
+#-I <npop> <s1> ... <sn> [<M>]: Use an island model with npop populations, where s1 to sn haplotypes are sampled from population 1 to n, respectively. Optionally assume a symmetric migration rate of M.
+
+str(sum_stats)
+# Simulate the site frequency spectrum at 3 loci. For each locus
+# 10 Chromosomes of 1Mb length are sampled from two populations with
+# migration inbetween.
+scrm('10 3 -r 400 1000000 -l 100000 -I 2 4 6 0.5 -t 300 -oSFS')$sfs
+#10 CS, 3 loci recom of 400. 100,0000 length (1 mil bases),  aprroximaitng 100,000?.  then 2pops, 4-6 haplotypes sampled from pop 1 to 2, migration rate of 0.5, mutation rate of 300?
+
+#-oSFS: Print the site frequency spectrum. Requires that the mutation rate θ is given with the ‘-t’ option.
+
+
+```
