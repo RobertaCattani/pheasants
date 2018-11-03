@@ -1,7 +1,17 @@
 
+
+If you use scrm in a publication, please cite the following publication:
+
+Paul R. Staab, Sha Zhu, Dirk Metzler and Gerton Lunter. scrm: efficiently simulating long sequences using the approximated coalescent with recombination. Bioinformatics (2015) 31 (10): 1680-1682. doi:10.1093/bioinformatics/btu861.
+
 citation: 
 
 Paul R. Staab, Sha Zhu, Dirk Metzler and Gerton Lunter. scrm: efficiently simulating long sequences using the approximated coalescent with recombination. Bioinformatics (2015) 31 (10): 1680-1682. doi:10.1093/bioinformatics/btu861
+
+The arguments for calling scrm are
+
+scrm <nhap> <nrep> [...]
+where nhap is the total number of haplotypes (in all populations and at all times) that are simulated at each locus, and nrep is the number of independent loci that will be produced. The [...] is an optional placeholder for an arbitrary number of command line flags described below.
 
 
 
