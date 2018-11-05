@@ -48,3 +48,29 @@ scrm('10 3 -r 400 1000000 -l 100000 -I 2 4 6 0.5 -t 300 -oSFS')$sfs
 
 
 ```
+
+scrm('80 5 -r 0 100 -t 4.6*10^-9 ')
+test1 <- scrm('80 5 -r 0 100 -t 4.6*10^-9 ')
+
+library(adegenet)
+read.loci (test1)
+
+scrm  <nhap> <nreps>
+read.structure("test1.stru")
+
+#exponential growth rate for 5 founder pop (Ns) and 500 end pop (n0) over 50 generations (50 years) = 0.096478
+scrm('80 10 -t 1.33*10^-9 -eN 0 500 -eN 50 5 -eG 50 0.096478 -eN 100 1000 -eG 100 0', file="test")
+#output for all the segregating sites: for first locus (segsites:30) - would be 30 snps in the window; its comparable to VCF bc its just the vairant sites, so have some idea of snps per number of base pairs. 
+#thse are haplotypes which are effective popsize. 
+#80 haplotypes which means 40 indivs. - simulates 80 CS but we're intepretting it as across the population - so make it 160 for 80 CS. 
+#blocks of data where each one is a locus, what is the benefit of doing multiple loci? bc essentially you're going to take first 2 lines of each block of code, so almost like the loci would be the CS. 
+
+
+test <- scrm('1000 1 -t 1.33*10^-9 -eN 0 500 -eN 50 5 -eG 50 0.096478 -eN 100 1000 -eG 100 0', file="test.stru")
+#do one and calc stats on this, shuffle it + Read it in as structure (then you say every individual is coded by 2 lines, so it groups them)
+#no of cS is indivs in effective pop x2 bc this is the number of haplotypes. (time 0: <nhap>)
+
+#with this know that its 500 indivs, name them as populations, but they're just the repetitions. 
+#run through the steps and then they wil help get the loop
+
+#to get it to read, may have to delete everything but the 0 and 1. 
