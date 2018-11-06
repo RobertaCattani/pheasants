@@ -44,6 +44,23 @@ str(sum_stats)
 scrm('10 3 -r 400 1000000 -l 100000 -I 2 4 6 0.5 -t 300 -oSFS')$sfs
 #10 CS, 3 loci recom of 400. 100,0000 length (1 mil bases),  aprroximaitng 100,000?.  then 2pops, 4-6 haplotypes sampled from pop 1 to 2, migration rate of 0.5, mutation rate of 300?
 
+ what <- scrm('1000 1 -r 0 1000 -t 1.33*10^-9 -eN 0 500 -eN 50 5 -eG 50 0.096478 -eN 100 1000 -eG 100 0', file="test1")
+ 
+ what2 <- scrm('1000 1 -t 1.33*10^-9 -eN 0 500 -eN 50 5 -eG 50 0.096478 -eN 100 1000 -eG 100 0', file="test2")
+ 
+#do one and calc stats on this, shuffle it + Read it in as structure (then you say every individual is coded by 2 lines, so it groups them)
+#no of cS is indivs in effective pop x2 bc this is the number of haplotypes. (time 0: <nhap>)
+
+#with this know that its 500 indivs, name them as populations, but they're just the repetitions. 
+#run through the steps and then they wil help get the loop
+
+write.csv(what, file = "my_data.csv")
+
+mydata <- read.csv("/Users/bobbiecattani/Birds/my_data.csv")
+summary(mydata)
+
+  library(hierfstat)
+basic.stats(mydata)
 #-oSFS: Print the site frequency spectrum. Requires that the mutation rate θ is given with the ‘-t’ option.
 
 
@@ -73,4 +90,8 @@ test <- scrm('1000 1 -t 1.33*10^-9 -eN 0 500 -eN 50 5 -eG 50 0.096478 -eN 100 10
 #with this know that its 500 indivs, name them as populations, but they're just the repetitions. 
 #run through the steps and then they wil help get the loop
 
-#to get it to read, may have to delete everything but the 0 and 1. 
+
+
+
+
+0.999532279502071
