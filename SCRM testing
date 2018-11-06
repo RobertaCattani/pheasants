@@ -24,3 +24,21 @@ with 500 base pairs: 0.0225
 with 1000 base pairs: 0.0236
 with 5000 base pairs 0.0212
 with 10,000 base pairs: 0.0242
+
+```
+df2 <- mydata3[sample(nrow(mydata3)),]
+```
+
+how to combine the data?
+
+```
+what3 <- scrm('1000 1 -r 0 10000 -t 0.0266 -eN 0 500 -eN 50 5 -eG 50 0.096478 -eN 100 1000 -eG 100 0', file="test1")
+```
+HO: 
+10000: 0.0201 
+5000:  0.0161
+1000: 0.0172
+500: 0.0154 
+50: 0.0198
+
+
