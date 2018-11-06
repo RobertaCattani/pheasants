@@ -1,0 +1,26 @@
+Load scrm: 
+library(scrm)
+
+#exponential growth rate for 5 founder pop (Ns) and 500 end pop (n0) over 50 generations (50 years) = 0.096478
+- maybe need to see how to do this within R (at this point, used amina's formula...)
+
+
+ what <- scrm('1000 1 -r 0 1000 -t 1.33*10^-9 -eN 0 500 -eN 50 5 -eG 50 0.096478 -eN 100 1000 -eG 100 0', file="test1")
+
+mutation rate needs to be x No (500 in above example, x 4 x number of base pairs (base length) 
+
+
+at the moment just sceeing if the number of base pairs interefers so need to change this later.. 
+
+``` 
+what <- scrm('1000 1 -r 0 1000 -t 1.33*10^-9 -eN 0 500 -eN 50 5 -eG 50 0.096478 -eN 100 1000 -eG 100 0', file="test1")
+write.csv(what, file = "my_data.csv")
+mydata <- read.csv("/Users/bobbiecattani/Birds/my_data.csv")
+basic.stats(mydata)
+```
+- gave an overall HO (observed heterozygotes)
+with 50 base pairs:  0.0226
+with 500 base pairs: 0.0225
+with 1000 base pairs: 0.0236
+with 5000 base pairs 0.0212
+with 10,000 base pairs: 0.0242
