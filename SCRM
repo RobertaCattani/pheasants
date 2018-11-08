@@ -109,3 +109,33 @@ summary(mydata)
 
   library(hierfstat)
 basic.stats(mydata)
+
+
+
+
+
+
+---- LOOP
+```
+library(scrm)
+library(hierfstat)
+##to decide, need to do many iterations of the same code with differing basepair numbers + get a mean + put it on a graph). 
+
+H_o_1000 <- numeric()
+for(i in 1:100)
+{
+  what3 <- scrm('1000 1 -r 0 1000 -t 0.0266 -eN 0 500 -eN 50 5 -eG 50 0.096478 -eN 100 1000 -eG 100 0', file="test1")
+  write.csv(what3, file = "what3.csv")
+  
+  mydata3 <- read.csv("/Users/bobbiecattani/Birds/what3.csv")
+  shuffle <- mydata3[sample(nrow(mydata3)),]
+  stats<-basic.stats(shuffle)
+  
+  H_o_1000[i] <- stats$overall[1]
+}
+mean(H_o_1000)
+var(H_o_1000)
+```
+
+##how to make it take two for 1?  
+
