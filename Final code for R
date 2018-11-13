@@ -1,0 +1,72 @@
+library(scrm)
+
+#need to look at results of sensitivity analysis to decide how many base pairs. 
+```
+H_o_1000 <- numeric()
+for(i in 1:100)
+{
+  what3 <- scrm('1000 1 -r 0 1000 -t 0.0266 -eN 0 500 -eN 50 5 -eG 50 0.096478 -eN 100 1000 -eG 100 0', file="test1")
+  write.csv(what3, file = "what3.csv")
+  
+  mydata3 <- read.csv("/Users/bobbiecattani/Birds/what3.csv")
+  shuffle <- mydata3[sample(nrow(mydata3)),]
+  stats<-basic.stats(shuffle)
+  
+  H_o_1000[i] <- stats$overall[1]
+}
+mean(H_o_1000)
+var(H_o_1000)
+```
+#remove the column with X bc not needed
+```
+population = shuffle[,-c(1)]
+```
+##not a matrix so need to make one. 
+```
+is.matrix(population)
+mat2 = data.matrix(population)
+is.matrix(mat2)
+summary(mat2)
+```
+##combine two rows into one. 
+```
+sum3 <- rowsum(mat2, as.integer(gl(nrow(mat2), 2, nrow(mat2))))
+```
+
+##putting them together - if even, hom, if not, Het# This depends on whether need both hom together or separate
+  ```
+  ID1 <- ifelse(sum3 %% 2 == 0,"Hom","Het")
+  ### counting them up.  - 
+    library(stringr)
+    str_count(ID1, "Hom")
+    Homall = sum(str_count(ID1, "Hom"))
+    Hetall = sum(str_count(ID1, "Het"))
+    
+    sum(str_count(ID1[1,], "Hom"))
+    #23407 divivded by total?
+    Exp = Homall/(Homall + Hetall)
+    ```
+    
+# OR can count up this way: -  if need Hom separately
+```
+hom2 <- sum(str_count(sum3, "2"))
+hom0 <- sum(str_count(sum3, "0"))
+hom1 <- sum(str_count(sum3, "1"))
+total=hom2+hom0+hom1
+#genotype frequencies:
+q2 =(hom0/total) 
+q= sqrt(q2)
+p = 1-q
+P2=p^2
+twopq = 2*p*q
+P2 + twopq + q2
+```
+
+#expected Het is 1-1/m(sum of allele frequencies of all loci)? Remember that homozygosity + het = 1. So your expected homozygosity will be 1-(1-1/m(sum of allele frequencies of all loci)), ie. (1/m(sum of allele frequencies of all loci)). 
+
+#adds to one: as in HWE 
+
+
+
+
+
