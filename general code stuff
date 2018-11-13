@@ -1,0 +1,5 @@
+library(hierfstat)
+#find the code underlying stuff 
+getAnywhere(basic.stats())
+#could then prob modify their code; they calculate het per locus + then across whole pop, we prob want per individual); and can also do runs of homozygosity. 
+
