@@ -1,0 +1,105 @@
+#install.packages("Rfast")
+#install.packages("scrm")
+#install.packages("stringr")
+library(scrm)
+library(stringr)
+
+#First we vdescribed our variables:
+nhap=1000 #number of haplotypes (i.e. indvis x2
+nrep=100 #min 100, 1000 if fast enough
+bp=1000000 #base pairs
+N0=500  #end population. 
+T1=50/(4*(N0)) #time at bottleneck
+N1=5 #pop at bottlneck
+N2=10000 #ancestral pop
+G= (-(1/T1)*(log10(N1/(N0)))) #exponential growth rate after bottleneck
+a2=0 #exponential/constant growth rate in ancestral pop
+theta0=4*(N0)*(1.33*10^-9)*bp  #theta with 4* end pop (NO)* mutation rate. 
+p=N1/N2 #pop proportion at bottleneck (bottleneck/ancestral pop)
+
+
+
+Fh = matrix(ncol = nrep,nrow=nhap/2)  #create a matrix with the number of columns and rows the output will have. 
+for(a in 1:nrep)
+{
+  command = paste(nhap, 1, "-t",theta0, "-G",G, "-eN",T1,p, "-eG",T1,a2) #write the command for scrm 
+  scrm.data<-scrm(command, file="test1")
+  write.table(scrm.data, file = paste("tabledata",a, ".txt",sep = ""))
+  
+  scrm.data
+  scrm.df=as.data.frame(scrm.data) #make the output from scrm a data frame. 
+  
+  shuffled.data <- scrm.df[sample(nrow(scrm.df)),] #randomly shuffle by row
+  shuffled.matrix <- data.matrix(shuffled.data, rownames.force = NA) #make into a matrix
+  diploid.data <- rowsum(shuffled.matrix, as.integer(gl(nrow(shuffled.matrix), 2, nrow(shuffled.matrix)))) #combine two rows by adding
+  named.diploid <- ifelse(diploid.data %% 2 == 0,"Hom","Het") #if divisible by 2(i.e even), label it Hom, if not, heterozygosity (00 and 11 are homo and bc are added are even, 01 is het so is odd. )
+  
+  #calculate the homozygosity for each individual (bc diploid now, it's 1/2 the number of haplotypes)
+  Hom_per_row = numeric()
+  for (i in 1:nhap/2)
+  {
+    Hom_per_row[i] = sum(str_count(named.diploid[i,], "Hom"))  #count the number of times Hom appears in each row
+  }
+  
+  
+  n.loci <- ncol(shuffled.matrix) #the number of loci we have is equal to the number of columns in the matrix
+  hom00 <- sum(str_count(diploid.data, "0")) #nbr of homozygotes 00
+  hom11 <- sum(str_count(diploid.data, "2")) #nbr of homozygotes 11
+  het01 <- sum(str_count(diploid.data, "1")) #nbr of heterozygotes 01
+  
+  
+  Mut_per_col = numeric()
+  maf = numeric()
+  EHom = numeric()
+  for (i in 1:n.loci)
+  {
+    Mut_per_col[i] = sum(str_count(shuffled.matrix[,i], "1")) #count how many 1's there are (i.e. mutations alleles in each column to see the heterozygoity per col)
+    maf[i]=Mut_per_col[i]/nhap  #calculate the maf by dividing by the number of rows (indivs) 
+    EHom[i]=1-2*maf[i]*(1-maf[i]) #calculate EHOM using minor allele frequencies - see formulas on google drive. 
+  }
+  
+  EHom
+  SEHom = sum(EHom) #sum of all epected Het
+  SOHom = hom00 + hom11 # sum of all observed homozygotes. 
+
+  
+  Fh[,a]= (Hom_per_row-SEHom)/(n.loci-SEHom)  #formula for FH. 
+  
+}
+
+Fh
+mean.Fh=rowMeans(Fh)  #mean fh of each row. 
+mean.Fh
+
+
+#ANALYSIS - significant differences between founder pop sizes?
+#Assume the dependent variable is y and the treatment codes are in the variable x. There are two ways to do a one-way ANOVA, using different functions. In each case I will output the results to an R object and then, with the function anova, ask for the ANOVA table to be extracted from that object. Method one: 
+
+#aov.result <- aov(y ~ factor(x))  
+#anova(aov.result) 
+
+#Method two:  lm.result <- lm(y ~ factor(x)) 
+#anova(lm.result) 
+
+
+ 
+
+library(Rfast)
+var.Fh=rowVars(Fh) #calculate the variance. 
+
+
+
+
+library(locfit)
+
+fit=locfit(~mean.Fh)
+plot(fit)  #plot a line graph. 
+abline(v=0,lty=2)
+
+#probably not needed: 
+#hist(Fh[,1])
+#hist(Fh[,1],freq=F)
+#lines(density(Fh))
+#lines(density(Fh[,1]))
+#lines(density(Fh[,1]),col=2)
+
