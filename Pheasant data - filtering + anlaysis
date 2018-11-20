@@ -172,3 +172,110 @@ Outputting VCF file...
 After filtering, kept 5802 out of a possible 5802 Sites
 Run Time = 1.00 seconds
 Bobbies-MacBook-Air:vcftools bobbiecattani$ 
+
+
+
+Inbreeding calculations
+#need to calculate the number of observed homozygotes for the mountain and malaysian populations. Do this using --het in VCF tools.
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf mountain.recode.vcf --het #this creates an output file with .het extension. 
+#rename this to mountain.out.het
+#Then, repeat for malaysain pheasant pop. 
+/users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf Malaysian.recode.vcf --het. 
+
+
+## read the het files into R as tables: 
+install.packages("pcadapt")
+library(pcadapt)
+
+
+##MALAYSIAN PHEASANTS
+
+#observed homozygosities
+```
+MALAYTABLE= read.table("malay.out.het", header=TRUE)
+malay_ohom = data.frame(MALAYTABLE$O.HOM)
+R = nrow(MALAYTABLE)
+```
+#expected homozyogisities. 
+ ```
+path2 = "Malaysian.recode.vcf"
+malayphe = read.pcadapt(path2, type = "vcf")
+PCAMALAY <- pcadapt(input=malayphe, K=10)
+malaymaf = PCAMALAY$maf
+malay_EHom = matrix(ncol=1, nrow=5421)
+for (i in 1:5421 )
+{
+  malay_EHom[i]=1-2*malaymaf[i]*(1-malaymaf[i]) #calculate EHOM using minor allele frequencies - see formulas on google drive. 
+}
+
+malay_exp = sum(malay_EHom)
+malay_exp
+```
+
+#Malaysian FH calculation 
+```
+FH_malay = matrix(ncol=1, nrow=R)
+for (i in 1:R)
+{
+  FH_malay[i] = (malay_ohom[i,]-malay_exp)/(5802-malay_exp)
+}
+FH_malay
+meanmalayfh= mean(FH_malay)
+varmalayfh = var(FH_malay)
+meanmalayfh
+varmalayfh
+```
+
+#MOUNTAIN PHEASANTS 
+#OBSERVED
+```
+mounttable = read.table("mount.out.het", header=TRUE)
+mount_ohom = data.frame(mounttable$O.HOM)
+Q = nrow(mounttable)
+```
+
+#EXPECTED MALAYSIAN HETEROZYGOSITY. 
+```
+library(pcadapt)
+path3 = "mountain.recode.vcf"
+mountphe = read.pcadapt(path3, type = "vcf")
+PCAmount <- pcadapt(input=mountphe, K=10)
+plot (PCAmount, option ="screeplot", K=10)
+mountmaf = PCAmount$maf
+mount_EHom = matrix(ncol=1, nrow=5765)
+for (i in 1:5765 )
+{
+  mount_EHom[i]=1-2*mountmaf[i]*(1-mountmaf[i]) #calculate EHOM using minor allele frequencies - see formulas on google drive. 
+}
+
+mount_exp = sum(mount_EHom)
+mount_exp
+```
+
+#MALAYSIAN fh
+
+```
+FH_mount = matrix(ncol=1, nrow=Q)
+for (i in 1:Q)
+{
+  FH_mount[i] = (mount_ohom[i,]-mount_exp)/(5802-mount_exp)
+}
+FH_mount
+
+meanmountfh= mean(FH_mount)
+varmountfh = var(FH_mount)
+meanmountfh
+varmountfh
+```
+
+# PLOTTING. 
+```
+library(locfit)
+
+MTfit=locfit(~FH_mount)
+plot(MTfit)  #plot a line graph. 
+
+MALfit=locfit(~FH_malay)
+plot(MALfit)
+```
+
