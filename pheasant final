@@ -1,0 +1,143 @@
+#install.packages("Rfast")
+#install.packages("scrm")
+#install.packages("stringr")
+library(scrm)
+library(stringr)
+library(locfit)
+
+#Kardos et al. 2015. He describes two measures of homozygosity - one where you look only at the minor allele frequency, and one where you look at both the minor and major alleles across the population. Kardos et al. 2015 (and everyone who uses PLINK to calculate homozygosity) uses the prior method: 
+#sum of (1-2p(1-p))
+#where p is the minor allele frequency at locus 1 across the whole population. 
+
+
+
+#First we vdescribed our variables:
+nhap=44#2*number of samples i.e. number of pheasante in real data* 2 (bc diploid) 
+#2 seperate simulations, one for malaysian (20 indv) and mountain (22 indv)
+nrep=10#min 100, 1000 if fast enough
+bp=1000000 #base pairs
+N0=500 #effective population ??? census size, mention in report!
+T1=50/(4*(N0)) #time at bottleneck
+N1=5 #pop at bottlneck
+N2=10000 #ancestral pop
+G=-(1/T1)*log10(N1/(N0)) #exponential growth rate after bottleneck
+a2=0 #exponential/constant growth rate in ancestral pop
+theta0=4*(N0)*(1.33*10^-9)*bp #with 1.33*10^-9 = mutationrate per yer (=generation) per locus
+p=N1/N2 #pop proportion at bottleneck (bottleneck/ancestral pop)
+
+
+#mimic real data
+#if  this happens (object has no variables), do heterozygosity
+#with small seq by chance th eprobabilty of having a varient is v low ( all indv the same) 
+
+
+
+Fh = matrix(ncol = nrep,nrow=nhap/2) #make columns for each iteration, with the number of rows = nbr of inividuals
+#Fh calculated with only minor allele frequency (see Keller et al.)
+G.EHet= matrix(nrow = nrep) #Global heterozygosity (Rita's formula)
+
+for(a in 1:nrep) #loop it nrep times
+{
+  command = paste(nhap, 1, "-t",theta0, "-G",G, "-eN",T1,p, "-eG",T1,a2)
+  scrm.data<-scrm(command, file="test1")
+  write.table(scrm.data, file = paste("tabledata",a, ".txt",sep = "")) #write a table for each loop and paste file in directory
+  
+  
+  scrm.df=as.data.frame(scrm.data) #coerce to class data.frame
+  
+  if(dim(scrm.df)[2]==0){ #bc low mutation rate sometimes no variants; to avoid this, tell loop to make G.EHet and Fh equal 0 if the dimensions of the columns [2] of scrm.df are 0 (bc if dim = 0 that means no diversity which means there is no heterozygosity, only homozygosity)
+    
+    G.EHet[a]<-0 #conditions
+    Fh[,a]<-0
+    
+    
+  }
+  
+  else{#if the dim ??? 0 then just rin loop normally
+    
+    shuffled.data <- scrm.df[sample(nrow(scrm.df)),] #shuffle the rows
+    shuffled.matrix <- data.matrix(shuffled.data, rownames.force = NA) #Convert a Data Frame to a Numeric Matrix
+    diploid.data <- rowsum(shuffled.matrix, as.integer(gl(nrow(shuffled.matrix), 2, nrow(shuffled.matrix)))) #combine 2 rows into 1 (haploid into diploid)
+    named.diploid <- ifelse(diploid.data %% 2 == 0,"Hom","Het") #if dividable by 2 and remainder 0, then name "Hom", if not name "Het"
+    
+    
+    Hom_per_row = numeric() #Homozygosity per colum by counting the "Hom"s
+    for (i in 1:nhap/2)
+    {
+      Hom_per_row[i] = sum(str_count(named.diploid[i,], "Hom"))
+    }
+    
+    
+    n.loci <- ncol(shuffled.matrix) #number of loci (i.e. segsites)
+    hom00 <- sum(str_count(diploid.data, "0")) #nbr of homozygotes 00
+    hom11 <- sum(str_count(diploid.data, "2")) #nbr of homozygotes 11
+    het01 <- sum(str_count(diploid.data, "1")) #nbr of heterozygotes 01
+    
+    
+    Mut_per_col = numeric() #Homozygosity per column
+    maf = numeric() #allele frequency
+    EHom = numeric() #Expected Homozygosity
+    for (i in 1:n.loci)
+    {
+      Mut_per_col[i] = sum(str_count(shuffled.matrix[,i], "1")) #count all the 1 (=mutation, whereas 0 are the ancestral state) for each segsite
+      
+      maf[i]=Mut_per_col[i]/nhap #number of hom per column, divided by total number of rows (2*individuals), so maf per loci
+      EHom[i]=1-2*maf[i]*(1-maf[i]) 
+    }
+    
+    EHom
+    SEHom = sum(EHom) #sum of expected homozygosity
+    SOHom = hom00 + hom11  #sum of observed homozygosity
+    
+    Fh[,a]= (Hom_per_row-SEHom)/(n.loci-SEHom) #Fh as proxy for inbreeding
+    
+    
+  #global estimates of heterozygosity / homozygosity
+    
+    G.Mut_per_col = numeric() #number of allele 1 per column
+    G.maf = numeric() #major allele frequency ratio = number of 1 divided by total number of alleles = p (because ratio)
+    G.Min.mut_per_col=numeric() ##number of allele 0 per column
+    G.min.af = numeric() #minor allele frequency ratio = number of 0 divided by total number of alleles =p
+    G.total.allele.freq=numeric() #sum of p^2 (individual observed homozygosity)
+    for (i in 1:n.loci)
+    {
+      G.Mut_per_col[i] = sum(str_count(shuffled.matrix[,i], "1")) #count all the 1 (=mutation, whereas 0 are the ancestral state) for each segsite
+      G.maf[i]=G.Mut_per_col[i]/nhap #number of hom per column, divided by total number of rows (2*individuals), so maf per loci
+      G.Min.mut_per_col[i] = sum(str_count(shuffled.matrix[,i], "0")) #count all the 0 (=mutation, whereas 0 are the ancestral state) for each segsite
+      G.min.af[i] = G.Min.mut_per_col[i]/nhap
+      G.total.allele.freq[i]=  (G.maf[i])^2+ (G.min.af[i])^2 #sum of p^2
+      
+      G.EHet[a] =1-(sum(G.total.allele.freq[i])/ total.sites) #Global heterozygosity = 1-sum of the sum of the indv. obsv. homo. divided by total number of sites
+      
+    }
+    
+    
+    
+  }
+}
+
+#postitive is higher homo than expected
+
+Fh
+G.EHet
+
+
+
+
+mean.Fh=rowMeans(Fh) #mean Fh per inividual (mean per each row)
+mean.Fh
+
+
+fit=locfit(~mean.Fh) #~x for a density estimation model
+plot(fit) #x=mean.Fh and automatically: density on y (plot a line graph)
+abline(v=0,lty=2) #line to show the mean Fh for the real pheasant data
+
+
+#ANALYSIS - significant differences between founder pop sizes?
+#Assume the dependent variable is y and the treatment codes are in the variable x. There are two ways to do a one-way ANOVA, using different functions. In each case I will output the results to an R object and then, with the function anova, ask for the ANOVA table to be extracted from that object. Method one: 
+
+#aov.result <- aov(y ~ factor(x))  
+#anova(aov.result) 
+
+#Method two:  lm.result <- lm(y ~ factor(x)) 
+#anova(lm.result) 
