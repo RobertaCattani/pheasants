@@ -10,7 +10,7 @@ ORDER:
 
 HWE not expected nc just some indvs from same sp from diff breders)
 •	Decide analyses for inbreeding: what do these do to the data – important bc some filters may bias the data set
-•	HET shouldn’t be higher than 0.5 – that’s the theoretical limit. 
+•	HET shouldn’t be higher than 0.5 – that’s the theoretical limit.  
 
 
 #set the working directory
@@ -102,7 +102,7 @@ cat lowDP.indv |wc -l
  #Writing individual heterozygosity information to [ plink.hwe ]
 ```
 
-will need to filter out everything that is below 0.5 observed (theoretical filter). 
+will need to filter out everything that is over 0.5 observed (theoretical filter). 
 OUTPUT:  only 6 over 0.5 s not hugely important. 
 
 
