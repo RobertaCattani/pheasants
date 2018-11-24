@@ -174,7 +174,6 @@ Run Time = 1.00 seconds
 Bobbies-MacBook-Air:vcftools bobbiecattani$ 
 
 
-
 Inbreeding calculations
 #need to calculate the number of observed homozygotes for the mountain and malaysian populations. Do this using --het in VCF tools.
 /users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf mountain.recode.vcf --het #this creates an output file with .het extension. 
@@ -183,99 +182,97 @@ Inbreeding calculations
 /users/bobbiecattani/Birds/vcftools/bin/vcftools --vcf Malaysian.recode.vcf --het. 
 
 
-## read the het files into R as tables: 
-install.packages("pcadapt")
-library(pcadapt)
-
+```
+#install.packages("adegenet")
+#install.packages("hierfstat")
+#install.packages("pcadapt")
+#library(pcadapt)
+```
 
 ##MALAYSIAN PHEASANTS
-
+```
 #observed homozygosities
-```
-MALAYTABLE= read.table("malay.out.het", header=TRUE)
-malay_ohom = data.frame(MALAYTABLE$O.HOM)
-R = nrow(MALAYTABLE)
-```
-#expected homozyogisities. 
- ```
-path2 = "Malaysian.recode.vcf"
-malayphe = read.pcadapt(path2, type = "vcf")
-PCAMALAY <- pcadapt(input=malayphe, K=10)
-malaymaf = PCAMALAY$maf
-malay_EHom = matrix(ncol=1, nrow=5421)
-for (i in 1:5421 )
-{
-  malay_EHom[i]=1-2*malaymaf[i]*(1-malaymaf[i]) #calculate EHOM using minor allele frequencies - see formulas on google drive. 
-}
+MALAYTABLE= read.table("malay.out.het", header=TRUE)  #read in data from VCF tools output
+malay_ohom = data.frame(MALAYTABLE$O.HOM) #get only the observed homozygosities
+malay.ohom.ratio =malay_ohom/5802  #divide number by the number of loci. 
+malay_ehom = data.frame(MALAYTABLE$E.HOM) #only the expected
 
-malay_exp = sum(malay_EHom)
+malay.ehom.ratio =malay_ehom/5802 #make the expected values into ratios by dividing by the number of loci.
+
+R = nrow(MALAYTABLE) #the number of inidivudals we have. 
+
+
+malay_exp = sum(malay.ehom.ratio) #calculated expected homozygosity by summing all the ratios up. 
 malay_exp
-```
 
 #Malaysian FH calculation 
-```
 FH_malay = matrix(ncol=1, nrow=R)
 for (i in 1:R)
 {
-  FH_malay[i] = (malay_ohom[i,]-malay_exp)/(5802-malay_exp)
+  FH_malay[i] = (malay.ohom.ratio[i,]-malay_exp)/(5802-malay_exp) #FH equation. 
 }
 FH_malay
-meanmalayfh= mean(FH_malay)
-varmalayfh = var(FH_malay)
-meanmalayfh
-varmalayfh
+#expected hom is much higher than what you get, so higher het than you'd expect(4* as much)
+
+hist(FH_malay) #plot a histrogram of the results of FH for each individual.
+meanmalayfh= mean(FH_malay) #the mean FH 
+varmalayfh = var(FH_malay) #varance of FH for malaysian
+
+#global malaysian
+sqr.malay = malay.ohom.ratio^2
+sum.malay.alleles=sum(sqr.malay)
+Malay.G.Ehet=1 -sum.malay.alleles/5802
 ```
 
 #MOUNTAIN PHEASANTS 
+```
 #OBSERVED
-```
-mounttable = read.table("mount.out.het", header=TRUE)
-mount_ohom = data.frame(mounttable$O.HOM)
-Q = nrow(mounttable)
-```
+mounttable = read.table("mount.out.het", header=TRUE) #read in VCF het output as a table)
+mount_ohom = data.frame(mounttable$O.HOM) #only the observed values. 
+Q = nrow(mounttable) #number of individuals. 
+mount.ohom.ratio =mount_ohom/5802 #make values into a ratio by dividing by the number of loci. 
 
 #EXPECTED MALAYSIAN HETEROZYGOSITY. 
-```
-library(pcadapt)
-path3 = "mountain.recode.vcf"
-mountphe = read.pcadapt(path3, type = "vcf")
-PCAmount <- pcadapt(input=mountphe, K=10)
-plot (PCAmount, option ="screeplot", K=10)
-mountmaf = PCAmount$maf
-mount_EHom = matrix(ncol=1, nrow=5765)
-for (i in 1:5765 )
-{
-  mount_EHom[i]=1-2*mountmaf[i]*(1-mountmaf[i]) #calculate EHOM using minor allele frequencies - see formulas on google drive. 
-}
-
-mount_exp = sum(mount_EHom)
+mount_ehom = data.frame(mounttable$E.HOM)  #read in VCF het output as a table)
+mount.ehom.ratio =mount_ehom/5802 #make values into a ratio by dividing by the number of loci. 
+mount_exp = sum(mount.ehom.ratio) #get expected homozygosity for all by summing them up. 
 mount_exp
-```
 
 #MALAYSIAN fh
-
-```
 FH_mount = matrix(ncol=1, nrow=Q)
 for (i in 1:Q)
 {
-  FH_mount[i] = (mount_ohom[i,]-mount_exp)/(5802-mount_exp)
+  FH_mount[i] = (mount.ohom.ratio[i,]-mount_exp)/(5802-mount_exp)
 }
 FH_mount
 
 meanmountfh= mean(FH_mount)
 varmountfh = var(FH_mount)
-meanmountfh
-varmountfh
+
+hist(FH_mount) ##how to add error bars?
+
+
+sqr.mount = mount.ohom.ratio^2
+sum.mount.alleles=sum(sqr.mount)
+Mount.G.Ehet=1 -sum.mount.alleles/5802
 ```
+
+
 
 # PLOTTING. 
 ```
 library(locfit)
-
-MTfit=locfit(~FH_mount)
-plot(MTfit)  #plot a line graph. 
-
-MALfit=locfit(~FH_malay)
-plot(MALfit)
+MaxMA = max(FH_malay)
+MaxMT = max(FH_mount)
+minMA=min(FH_malay)
+minMT=min(FH_mount)
+d = locfit(~FH_malay)
+f= locfit(~FH_mount)
 ```
+#You need to play with the x-axis limits (xlim=c(min,max)). Your plot would be something like:
+  ```
+  plot(d, xlab="Fh", ylab="density", xlim=c(minMA,MaxMT), col="red") # change the values for xlim
+  lines(f, col="blue")
+  
 
+```
