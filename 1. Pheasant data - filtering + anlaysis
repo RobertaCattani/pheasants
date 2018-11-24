@@ -232,13 +232,13 @@ mount_ohom = data.frame(mounttable$O.HOM) #only the observed values.
 Q = nrow(mounttable) #number of individuals. 
 mount.ohom.ratio =mount_ohom/5802 #make values into a ratio by dividing by the number of loci. 
 
-#EXPECTED MALAYSIAN HETEROZYGOSITY. 
+#EXPECTED MOUNTAIN HETEROZYGOSITY. 
 mount_ehom = data.frame(mounttable$E.HOM)  #read in VCF het output as a table)
 mount.ehom.ratio =mount_ehom/5802 #make values into a ratio by dividing by the number of loci. 
 mount_exp = sum(mount.ehom.ratio) #get expected homozygosity for all by summing them up. 
 mount_exp
 
-#MALAYSIAN fh
+#MOUNTAIN fh
 FH_mount = matrix(ncol=1, nrow=Q)
 for (i in 1:Q)
 {
@@ -251,7 +251,7 @@ varmountfh = var(FH_mount)
 
 hist(FH_mount) ##how to add error bars?
 
-
+#GLOBAL MOUNTAIN
 sqr.mount = mount.ohom.ratio^2
 sum.mount.alleles=sum(sqr.mount)
 Mount.G.Ehet=1 -sum.mount.alleles/5802
