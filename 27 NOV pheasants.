@@ -1,0 +1,90 @@
+#install.packages("adegenet")
+#install.packages("hierfstat")
+#install.packages("pcadapt")
+library(pcadapt)
+setwd("C:/Users/Bobbie/OneDrive - University of Bristol/Practical Project")
+
+##MALAYSIAN PHEASANTS
+
+#observed homozygosities
+MALAYTABLE= read.table("malay.out.het", header=TRUE)  #read in data from VCF tools output
+malay_ohom = data.frame(MALAYTABLE$O.HOM) #get only the observed homozygosities
+malay.ohom.ratio =malay_ohom/5802  #divide number by the number of loci. 
+malay_ehom = data.frame(MALAYTABLE$E.HOM) #only the expected
+
+malay.ehom.ratio =malay_ehom/5802 #make the expected values into ratios by dividing by the number of loci.
+
+R = nrow(MALAYTABLE) #the number of inidivudals we have. 
+
+
+malay_exp = sum(malay.ehom.ratio) #calculated expected homozygosity by summing all the ratios up. 
+malay_exp
+
+#Malaysian FH calculation 
+FH_malay = matrix(ncol=1, nrow=R)
+for (i in 1:R)
+{
+  FH_malay[i] = (malay.ohom.ratio[i,]-malay_exp)/(5802-malay_exp) #FH equation. 
+}
+FH_malay
+#expected hom is much higher than what you get, so higher het than you'd expect(4* as much)
+
+hist(FH_malay) #plot a histrogram of the results of FH for each individual.
+meanmalayfh= mean(FH_malay) #the mean FH 
+varmalayfh = var(FH_malay) #varance of FH for malaysian
+
+
+
+#global malaysian
+
+sqr.malay = malay.ohom.ratio^2
+sum.malay.alleles=sum(sqr.malay)
+Malay.G.Ehet=1 -sum.malay.alleles/5802
+
+
+
+#MOUNTAIN PHEASANTS 
+#OBSERVED
+mounttable = read.table("mount.out.het", header=TRUE) #read in VCF het output as a table)
+mount_ohom = data.frame(mounttable$O.HOM) #only the observed values. 
+Q = nrow(mounttable) #number of individuals. 
+mount.ohom.ratio =mount_ohom/5802 #make values into a ratio by dividing by the number of loci. 
+
+#EXPECTED MOUNTAIN HETEROZYGOSITY. 
+mount_ehom = data.frame(mounttable$E.HOM)  #read in VCF het output as a table)
+mount.ehom.ratio =mount_ehom/5802 #make values into a ratio by dividing by the number of loci. 
+mount_exp = sum(mount.ehom.ratio) #get expected homozygosity for all by summing them up. 
+mount_exp
+
+
+#MOUNTAIN fh
+FH_mount = matrix(ncol=1, nrow=Q)
+for (i in 1:Q)
+{
+  FH_mount[i] = (mount.ohom.ratio[i,]-mount_exp)/(5802-mount_exp)
+}
+FH_mount
+
+meanmountfh= mean
+
+##little variance means that uits good bc it means that they're all not inbred, (i.e. not one really inbred),shows captive breeding worked bc less inbred than would expect them to be.
+varmountfh = var(FH_mount)
+
+mount.hist<- hist(FH_mount, xlab="Fh Mountain Pheasants") #don't have error bars, but maybe change colours. 
+
+malay.hist <- hist(FH_malay, xlab="Fh Malaysian Pheasants")
+
+
+#global estimates MOUNTAIN
+
+sqr.mount = mount.ohom.ratio^2
+sum.mount.alleles=sum(sqr.mount)
+Mount.G.Ehet=1 -sum.mount.alleles/5802
+
+mount.g.ehet
+
+mount.mean.Fh <- mean(FH_mount)
+malay.mean.Fh <- mean(FH_malay)
+#add these lines onto the respective plots for the scrm graphs. 
+
+
