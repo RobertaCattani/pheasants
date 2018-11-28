@@ -30,7 +30,6 @@ p=N1/N2 #pop proportion at bottleneck (bottleneck/ancestral pop)
 #if  this happens (object has no variables), do heterozygosity
 #with small seq by chance th eprobabilty of having a varient is v low ( all indv the same) 
 
-warnings()
 
 Fh = matrix(ncol = nrep,nrow=nhap/2) #make columns for each iteration, with the number of rows = nbr of inividuals
 #Fh calculated with only minor allele frequency (see Keller et al.)
@@ -118,6 +117,8 @@ for(a in 1:nrep) #loop it nrep times
   }
   
 }
+  
+  
   
 #postitive is higher homo than expected
 
