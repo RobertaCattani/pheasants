@@ -81,7 +81,8 @@ sqr.mount = mount.ohom.ratio^2
 sum.mount.alleles=sum(sqr.mount)
 Mount.G.Ehet=1 -sum.mount.alleles/5802
 
-mount.g.ehet
+Mount.G.Ehet
+
 
 mount.mean.Fh <- mean(FH_mount)
 malay.mean.Fh <- mean(FH_malay)
