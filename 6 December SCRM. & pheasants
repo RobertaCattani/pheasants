@@ -1,0 +1,369 @@
+install.packages("Rfast")
+install.packages("scrm")
+install.packages("stringr")
+install.packages("locfit")
+library(scrm)
+library(stringr)
+library(locfit)
+library(Rfast)
+library(dplyr)
+
+#Kardos et al. 2015. He describes two measures of homozygosity - one where you look only at the minor allele frequency, and one where you look at both the minor and major alleles across the population. Kardos et al. 2015 (and everyone who uses PLINK to calculate homozygosity) uses the prior method: 
+#sum of (1-2p(1-p))
+#where p is the minor allele frequency at locus 1 across the whole population. 
+
+#First we vdescribed our variables:
+nhap=40 #2*number of samples i.e. number of pheasante in real data* 2 (bc diploid) 
+#2 seperate simulations, one for malaysian (20 indv) and mountain (22 indv)
+nrep=1000#min 100, 1000 if fast enough
+bp=1000000 #base pairs
+N0=500 #effective population ??? census size, mention in report!
+T1=100/(4*(N0)) #time at bottleneck
+N1=40 #pop at bottlneck (2,4,6,8,10,20,40 - 7 different ones.)
+N2=150000 #ancestral pop, 
+G=-(1/T1)*log(N1/(N0)) #exponential growth rate after bottleneck #needs to be natural log (not log 10)
+a2=0 #exponential/constant growth rate in ancestral pop
+theta0=4*(N0)*(1.33*10^-9)*bp #with 1.33*10^-9 = mutationrate per yer (=generation) per locus
+p=N1/N2 #pop proportion at bottleneck (bottleneck/ancestral pop)
+recom = (4*N0*0.03)  #for chicken stuff 
+recom
+#mimic real data
+#if  this happens (object has no variables), do heterozygosity
+#with small seq by chance th eprobabilty of having a varient is v low ( all indv the same) 
+#where _nhap_ is the total number of haplotypes (in all populations and at all times) that are simulated at each locus, and _nrep_ is the number of independent loci that will be produced. The `[...]` is an optional placeholder for an arbitrary number of command line flags described below.
+
+
+Fh = matrix(ncol = nrep,nrow=nhap/2) #make columns for each iteration, with the number of rows = nbr of inividuals
+#Fh calculated with only minor allele frequency (see Keller et al.)
+G.EHet= matrix(nrow = nrep) #Global heterozygosity (Rita's formula)
+
+for(a in 1:nrep) #loop it nrep times: this is loop:
+{
+  command = paste(nhap, 1, "-t",theta0, "-G",G, "-eN",T1,p, "-eG",T1,a2, "-r",recom,bp, "-print-model", "--print-model")
+  
+  
+  scrm.data<-scrm(command)
+
+
+  #write.table(scrm.data, file = paste("tabledata",a, ".txt",sep = "")) #write a table for each loop and paste file in directory
+  
+  
+  scrm.df=as.data.frame(scrm.data) #coerce to class data.frame
+  
+  if(dim(scrm.df)[2]==0){ #bc low mutation rate sometimes no variants; to avoid this, tell loop to make G.EHet and Fh equal 0 if the dimensions of the columns [2] of scrm.df are 0 (bc if dim = 0 that means no diversity which means there is no heterozygosity, only homozygosity)
+    
+    G.EHet[a]<-0 #conditions
+    Fh[,a]<-0
+    
+    
+  }
+  
+  else{#if the dim ??? 0 then just rin loop normally
+    
+    shuffled.data <- scrm.df[sample(nrow(scrm.df)),] #shuffle the rows
+    shuffled.matrix <- data.matrix(shuffled.data, rownames.force = NA) #Convert a Data Frame to a Numeric Matrix
+    diploid.data <- rowsum(shuffled.matrix, as.integer(gl(nrow(shuffled.matrix), 2, nrow(shuffled.matrix)))) #combine 2 rows into 1 (haploid into diploid)
+    named.diploid <- ifelse(diploid.data %% 2 == 0,"Hom","Het") #if dividable by 2 and remainder 0, then name "Hom", if not name "Het"
+    
+    
+    Hom_per_row = numeric() #Homozygosity per colum by counting the "Hom"s
+    for (i in 1:nhap/2)
+    {
+      Hom_per_row[i] = sum(str_count(named.diploid[i,], "Hom"))
+    }
+    
+    
+    n.loci <- ncol(shuffled.matrix) #number of loci (i.e. segsites)
+    hom00 <- sum(str_count(diploid.data, "0")) #nbr of homozygotes 00
+    hom11 <- sum(str_count(diploid.data, "2")) #nbr of homozygotes 11
+    het01 <- sum(str_count(diploid.data, "1")) #nbr of heterozygotes 01
+    
+    
+    Mut_per_col = numeric() #Homozygosity per column
+    maf = numeric() #allele frequency
+    EHom = numeric() #Expected Homozygosity
+    for (i in 1:n.loci)
+    {
+      Mut_per_col[i] = sum(str_count(shuffled.matrix[,i], "1")) #count all the 1 (=mutation, whereas 0 are the ancestral state) for each segsite
+      
+      maf[i]=Mut_per_col[i]/nhap #number of hom per column, divided by total number of rows (2*individuals), so maf per loci
+      EHom[i]=1-2*maf[i]*(1-maf[i]) 
+    }
+    
+    EHom
+    SEHom = sum(EHom) #sum of expected homozygosity
+    SOHom = hom00 + hom11  #sum of observed homozygosity
+    
+    Fh[,a]= (Hom_per_row-SEHom)/(n.loci-SEHom) #Fh as proxy for inbreeding
+    
+    
+    #global estimates of heterozygosity / homozygosity
+    rows= nrow(shuffled.matrix)
+    cols=ncol(shuffled.matrix)
+    total.sites = rows*cols #is the total number of sites needed for the caclulation of the gene diversity
+    
+    
+    G.Mut_per_col = numeric() #number of allele 1 per column
+    G.maf = numeric() #major allele frequency ratio = number of 1 divided by total number of alleles = p (because ratio)
+    G.Min.mut_per_col=numeric() ##number of allele 0 per column
+    G.min.af = numeric() #minor allele frequency ratio = number of 0 divided by total number of alleles =p
+    G.total.allele.freq=numeric() #sum of p^2 (individual observed homozygosity)
+    for (i in 1:n.loci)
+    {
+      G.Mut_per_col[i] = sum(str_count(shuffled.matrix[,i], "1")) #count all the 1 (=mutation, whereas 0 are the ancestral state) for each segsite
+      G.maf[i]=G.Mut_per_col[i]/nhap #number of hom per column, divided by total number of rows (2*individuals), so maf per loci
+      G.Min.mut_per_col[i] = sum(str_count(shuffled.matrix[,i], "0")) #count all the 0 (=mutation, whereas 0 are the ancestral state) for each segsite
+      G.min.af[i] = G.Min.mut_per_col[i]/nhap
+      G.total.allele.freq[i]=  (G.maf[i])^2+ (G.min.af[i])^2 #sum of p^2
+      
+      G.EHet[a] =1-(sum(G.total.allele.freq[i])/ total.sites) #Global heterozygosity = 1-sum of the sum of the indv. obsv. homo. divided by total number of sites
+      
+    }
+    
+  }
+  
+}
+
+
+
+n.loci #is this right?
+
+
+#Fh.means.2 = rowmeans(Fh) # need to change this with each loop. 
+#G.EHET.2 = G.EHet
+#G2sub=subset(G.EHET.2, G.EHET.2[,1]!=0) # remove simulations where no variance
+#rm.2 = length(G.EHET.2) -length(G2sub) # calculate the number of simultions that had no variance
+
+
+#Fh.means.4 = rowmeans(Fh) # need to change this with each loop. 
+#G.EHET.4 = G.EHet
+#G4sub=subset(G.EHET.4, G.EHET.4[,1]!=0)
+#G4sub=subset(G.EHET.4, G.EHET.4[,1]!=0)
+#rm.4 = length(G.EHET.4) -length(G4sub)
+
+
+#Fh.means.6 = rowmeans(Fh) # need to change this with each loop. 
+#G.EHET.6 = G.EHet
+#G6sub=subset(G.EHET.6, G.EHET.6[,1]!=0)
+#rm.6 = length(G.EHET.6) -length(G6sub)
+
+#Fh.means.8 = rowmeans(Fh) # need to change this with each loop. 
+#G.EHET.8 = G.EHet
+#G8sub=subset(G.EHET.8, G.EHET.8[,1]!=0)
+
+#Fh.means.10 = rowmeans(Fh) # need to change this with each loop. 
+#G.EHET.10 = G.EHet
+#G10sub=subset(G.EHET.10, G.EHET.10[,1]!=0)
+#rm.10 = length(G.EHET.10) -length(G10sub)
+
+
+#Fh.means.20 = rowmeans(Fh) # need to change this with each loop. 
+#G.EHET.20 = G.EHet 
+#G20sub=subset(G.EHET.20, G.EHET.20[,1]!=0)
+#rm.20 = length(G.EHET.20) -length(G20sub)
+
+
+Fh.means.40 = rowmeans(Fh) # need to change this with each loop. 
+G.EHET.40 = G.EHet
+G40sub=subset(G.EHET.40, G.EHET.40[,1]!=0) # give variable you want to change, then give the condition. this is only keeping things not 0.
+rm.40 = length(G.EHET.40) -length(G40sub)
+
+
+mean2 = mean(G.EHET.2)
+mean4 = mean(G.EHET.4)
+mean6 = mean(G.EHET.6)
+mean8 = mean(G.EHET.8)
+mean10 = mean(G.EHET.10)
+mean20 = mean(G.EHET.20)
+mean40 = mean(G.EHET.40)
+
+GHET = c(G.EHET.2, G.EHET.4, G.EHET.6, G.EHET.8, G.EHET.10, G.EHET.20, G.EHET.40)
+
+head(aov.data)
+levels(aov.data$x.factor)
+global
+x.factor = as.factor(x)
+aov.data = data.frame(GHET, x.factor) #make datafram where x is factor and y is numeric
+
+Gaov.out = aov(GHET~x.factor, data=aov.data)
+summary(Gaov.out)
+summary.lm(Gaov.out)
+G.TUKEY = TukeyHSD (Gaov.out)
+plot(Gaov.out,2)#homosecdasticity
+hist(resid(Gaov.out)) #not normal. 
+
+shapiro.test(resid(Gaov.out)) #normality
+library(car)
+leveneTest(GHET~x.factor, data=aov.data)  #insig= homosced (equal variances can be assumed)
+
+kruskal.test(GHET ~ x.factor, data = aov.data) #insignificant. 
+pairwise.wilcox.test(aov.data$GHET, aov.data$x.factor, p.adjust.method = "BH")
+
+
+#can say ran it 1000 times + from those 1000 times, no diversity found that many times. but might change with recombination.  do with FH too.
+
+global = list(G2sub, G4sub, G6sub, G8sub, G10sub, G20sub, G40sub)
+boxplot(global, xaxt="n", xlab="founder pop", ylim=c(0.85, 1), col=colours)
+axis(1, at=c(1,2,3,4,5,6,7), labels=c("2", "4", "6", "8", "10", "20","40"))
+abline(h=Malay.G.Ehet,  col="blue", lty=2, lwd=2)
+legend(5.5, 0.875, xpd=TRUE, horiz=TRUE, inset=c(0,-0.09), legend=c("Malaysian"), col="blue", bty="n", fill="blue")
+legend("top", xpd=TRUE, horiz=TRUE, inset=c(0,-0.09), legend=c("Malaysian","Fh.2", "Fh.4", "Fh.6", "Fh.8", "Fh.10", "Fh.20", "Fh.40"), col="blue", fill=c("blue", colours), bty="n")
+
+#run a boxplot with all the diff subsetted for global het
+#make table to show how many gave no diversity. - but only if still lots of 0s 
+
+
+#locfit fits the line better. 
+fit2=locfit(~Fh.means.2) #~x for a density estimation model
+fit4=locfit(~Fh.means.4) #~x for a density estimation model
+fit6=locfit(~Fh.means.6) #~x for a density estimation model
+fit8=locfit(~Fh.means.8) #~x for a density estimation model
+fit10=locfit(~Fh.means.10) #~x for a density estimation model
+fit20=locfit(~Fh.means.20) #~x for a density estimation model
+fit40=locfit(~Fh.means.40) #~x for a density estimation model
+min(Fh.means.2)
+
+
+plot(NULL, xlim=c(-0.25, 0.2), ylim=c(0,9), xlab="Mean Fh", ylab="Density")
+lines(fit2, col="deeppink", lwd=2)
+lines(fit4, col="blueviolet", lwd=2)
+lines(fit6, col="forestgreen", lwd=2)
+lines(fit8, col="darkorange1", lwd=2)
+lines(fit10, col="deepskyblue", lwd=2)
+lines(fit20, col="gray48", lwd=2)
+lines(fit40, col="black", lwd=2)
+colours=c("deeppink", "blueviolet", "forestgreen", "darkorange1", "deepskyblue", "gray48", "black")
+legend(0.15, 8.5, legend=c("Fh.2", "Fh.4", "Fh.6", "Fh.8", "Fh.10", "Fh.20", "Fh.40"), col=colours, cex=0.8, fill=colours, bty="n")
+abline(v=malay.mean.Fh, lty=3, col="blue", lwd=3)  
+
+
+#populationFH
+pop2.meanFH = mean(Fh.means.2)
+pop4.meanFH = mean(Fh.means.4)
+pop6.meanFH = mean(Fh.means.6)
+pop8.meanFH = mean(Fh.means.8)
+pop10.meanFH = mean(Fh.means.10)
+pop20.meanFH = mean(Fh.means.20)
+pop40.meanFH = mean(Fh.means.40)
+
+
+
+popmeansFH = c(pop2.meanFH, pop4.meanFH,  pop6.meanFH,  pop8.meanFH,  pop10.meanFH,  pop20.meanFH,  pop40.meanFH)
+means2 = c(Fh.means.2, Fh.means.4, Fh.means.6, Fh.means.8, Fh.means.10, Fh.means.20, Fh.means.40)
+hist(popmeansFH)
+#Assume the dependent variable is y and the treatment codes are in the variable x. There are two ways to do a one-way ANOVA, using different functions. In each case I will output the results to an R object and then, with the function anova, ask for the ANOVA table to be extracted from that object. Method one: 
+x=c(2,4,6,8,10,20,40)
+x.factor = as.factor(x)
+FH.data = data.frame(means2, x.factor) #make datafram where x is factor and y is numeric
+FH.data
+FHaov.out = aov(means2~x.factor, data=FH.data)
+summary(FHaov.out)
+summary.lm(FHaov.out)
+FH.AOV = TukeyHSD (FHaov.out)
+FH.AOV
+plot(FHaov.out,2) #homosecdasticity
+hist(resid(FHaov.out)) #normal?
+
+shapiro.test(resid(FHaov.out)) #normality
+library(car)
+leveneTest(means2~x.factor, data=FH.data) #0.605 = insig; equal variances
+  
+
+
+
+
+##Interpret the result of one-way ANOVA tests
+#As the p-value is less than the significance level 0.05, we can conclude that there are significant differences between the groups highlighted with "*" in the model summary.
+
+
+##PHEASANTS
+
+#install.packages("adegenet")
+#install.packages("hierfstat")
+#install.packages("pcadapt")
+library(pcadapt)
+
+##MALAYSIAN PHEASANTS
+
+#observed homozygosities
+MALAYTABLE= read.table("malay.out.het", header=TRUE)  #read in data from VCF tools output
+malay_ohom = data.frame(MALAYTABLE$O.HOM) #get only the observed homozygosities
+malay.ohom.ratio =malay_ohom/5802  #divide number by the number of loci. 
+malay_ehom = data.frame(MALAYTABLE$E.HOM) #only the expected
+
+malay.ehom.ratio =malay_ehom/5802 #make the expected values into ratios by dividing by the number of loci.
+
+R = nrow(MALAYTABLE) #the number of inidivudals we have. 
+
+malay_exp = sum(malay.ehom.ratio) #calculated expected homozygosity by summing all the ratios up. 
+malay_exp
+
+#Malaysian FH calculation 
+FH_malay = matrix(ncol=1, nrow=R)
+for (i in 1:R)
+{
+  FH_malay[i] = (malay.ohom.ratio[i,]-malay_exp)/(5802-malay_exp) #FH equation. 
+}
+FH_malay
+#expected hom is much higher than what you get, so higher het than you'd expect(4* as much)
+
+hist(FH_malay) #plot a histrogram of the results of FH for each individual.
+meanmalayfh= mean(FH_malay) #the mean FH 
+varmalayfh = var(FH_malay) #varance of FH for malaysian
+
+#global malaysian
+MAavg.ohom = sum(malay.ohom.ratio)/20
+Malay.G.Ehet=1 -MAavg.ohom
+
+Malay.G.Ehet
+
+#MOUNTAIN PHEASANTS 
+#OBSERVED
+mounttable = read.table("mount.out.het", header=TRUE) #read in VCF het output as a table)
+mount_ohom = data.frame(mounttable$O.HOM) #only the observed values. 
+Q = nrow(mounttable) #number of individuals. 
+sum(mounttable$N_SITES)
+mount.ohom.ratio =mount_ohom/5802 #make values into a ratio by dividing by the number of loci. 
+
+#EXPECTED MOUNTAIN HETEROZYGOSITY. 
+mount_ehom = data.frame(mounttable$E.HOM)  #read in VCF het output as a table)
+mount.ehom.ratio =mount_ehom/5802 #make values into a ratio by dividing by the number of loci. 
+mount.ehom.ratio
+mount_exp = sum(mount.ehom.ratio) #get expected homozygosity for all by summing them up. 
+mount_exp
+
+
+#MOUNTAIN fh
+FH_mount = matrix(ncol=1, nrow=Q)
+for (i in 1:Q)
+{
+  FH_mount[i] = (mount.ohom.ratio[i,]-mount_exp)/(5802-mount_exp)
+}
+FH_mount
+
+meanmountfh= mean
+
+##little variance means that uits good bc it means that they're all not inbred, (i.e. not one really inbred),shows captive breeding worked bc less inbred than would expect them to be.
+varmountfh = var(FH_mount)
+
+mount.hist<- hist(FH_mount, xlab="Fh Mountain Pheasants") #don't have error bars, but maybe change colours. 
+malay.hist <- hist(FH_malay, xlab="Fh Malaysian Pheasants")
+
+
+#global estimates MOUNTAIN
+MTavg.ehom = sum(mount.ohom.ratio)/22
+Mount.G.Ehet=1 -MTavg.ehom
+
+Mount.G.Ehet
+
+FH_mount
+mount.mean.Fh <- mean(FH_mount)
+malay.mean.Fh <- mean(FH_malay)
+#add these lines onto the respective plots for the scrm graphs. 
+
+
+
+
+
+
+
