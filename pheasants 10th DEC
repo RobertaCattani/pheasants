@@ -1,3 +1,9 @@
+#calculate the observed allele frequencies in terminal with '/Users/aminachabach/Project/vcftools_0.1.13/bin/vcftools --vcf mountain.recode.vcf --het'
+
+
+
+
+
 #install.packages("adegenet")
 #install.packages("hierfstat")
 #install.packages("pcadapt")
