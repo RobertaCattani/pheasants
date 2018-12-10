@@ -97,7 +97,7 @@ malay.mean.Fis = mean(Fis_malay)
 #add these lines onto the respective plots for the scrm graphs. 
 
 
-malaylocus= read.csv("/Users/bobbiecattani/Documents/Documents - MacBook Air/University/Year Three/Staying Alive/Practical Project/malaylocus.csv", header=TRUE)
+malaylocus = read.csv("/Users/bobbiecattani/Documents/Documents - MacBook Air/University/Year Three/Staying Alive/Practical Project/malaylocus2.csv", header=TRUE)
 mountlocus=read.csv("/Users/bobbiecattani/Documents/Documents - MacBook Air/University/Year Three/Staying Alive/Practical Project/mountlocus2.csv", header=TRUE)
 
 
@@ -126,3 +126,13 @@ allele1 =(mountfreq.1[1:5386,] + malayfreq.1)^2
 allele0 = (mountfreq.0[1:5386,] + malayfreq.0)^2
 
 HT=1-(sum(allele1+ allele0))
+pop1=(mountfreq.1)^2 + (mountfreq.0)^2
+pop2 =(malayfreq.1)^2 + (malayfreq.0)^2
+HS = 1 - sum(pop1[1:5386,]+pop2)
+
+FST = 1-HS/HT
+  
+#   We don't need two divide HT and HS by the number of populations because 
+# this number is going to be removed in the in the FST formula.
+# 
+# FST=1-(HS/2)/(HT/2)=1-HS/HT
