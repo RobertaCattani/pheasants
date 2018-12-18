@@ -1,0 +1,276 @@
+
+# Packages ----------------------------------------------------------------
+# First, install + load libraries:
+library(locfit)
+library(car)
+
+#library(scrm)
+#library(stringr)
+#library(locfit)
+#library(Rfast)
+#library(dplyr)
+#library(Rfast)
+#install.packages("FSA")
+#install.packages("gridExtra")
+# library(gridExtra)
+# library(FSA)
+# library(ggpubr)
+# library(ggplot2)
+
+# Parameters --------------------------------------------------------------
+T1=50/(4*(N0)) #time at bottleneck: either 50 or 150 !!!!
+N1=5 #pop at bottlneck (5,10,25,50,100,250, 500) !!!! 
+
+nhap=40 #2*number of samples i.e. number of pheasante in real data (20)
+#2 seperate simulations, one for malaysian (20 indv) and mountain (22 indv)
+nrep=1000 #min 100, 1000 if fast enough
+#1 is number of simulations within scrm. 
+bp=1000000 #base pairs - maybe more bc birds have 1gb roughly?? - do 10 mil. 
+N0=500 #effective population ??? census size, mention in report!
+N2=150000 #ancestral pop, 
+G=-(1/T1)*log(N1/(N0)) #exponential growth rate after bottleneck #needs to be natural log (not log 10)
+a2=0 #exponential/constant growth rate in ancestral pop
+theta0=4*(N0)*(1.33*10^-9)*bp #with 1.33*10^-9 = mutationrate per yer (=generation) per locus
+p=N1/N2 #pop proportion at bottleneck (bottleneck/ancestral pop)
+recom = (4*N0*0.03)  
+
+# SCRM loop ---------------------------------------------------------------
+
+Fh = matrix(ncol = nrep,nrow=nhap/2) #make columns for each iteration, with the number of rows = nbr of inividuals
+#Fh calculated with only minor allele frequency (see Keller et al.)
+for(a in 1:nrep) #loop it nrep times: this is loop:
+{
+  command = paste(nhap, 1, "-t",theta0, "-G",G, "-eG",T1,a2, "-eN",T1,p, "-r",recom,bp, "-print-model", "--print-model")
+  scrm.data<-scrm(command, file="test")
+  #write.table(scrm.data, file = paste("tabledata",a, ".txt",sep = "")) #write a table for each loop and paste file in directory
+  scrm.df=as.data.frame(scrm.data) #coerce to class data.frame
+  
+  if(dim(scrm.df)[2]==0){ #bc low mutation rate sometimes no variants; to avoid this, tell loop to make G.EHet and Fh equal 0 if the dimensions of the columns [2] of scrm.df are 0 (bc if dim = 0 that means no diversity which means there is no heterozygosity, only homozygosity)
+    Fh[,a] = 1 #bc 1 is more homozygote + it ranges between these values; -ve are more hetero than expected. 
+    Fis[,a] = 1
+  } 
+  else{   #if the dim ??? 0 then just rin loop normally
+    
+    shuffled.data <- scrm.df[sample(nrow(scrm.df)),] #shuffle the rows
+    shuffled.matrix <- data.matrix(shuffled.data, rownames.force = NA) #Convert a Data Frame to a Numeric Matrix
+    diploid.data <- rowsum(shuffled.matrix, as.integer(gl(nrow(shuffled.matrix), 2, nrow(shuffled.matrix)))) #combine 2 rows into 1 (haploid into diploid)
+    named.diploid <- ifelse(diploid.data %% 2 == 0,"Hom","Het") #if dividable by 2 and remainder 0, then name "Hom", if not name "Het"
+    n.loci <- ncol(shuffled.matrix) #number of loci (i.e. segsites)
+    
+    Hom_per_row = numeric() #Homozygosity per row by counting the "Hom"s
+    for (i in 1:nhap/2)
+    {
+      Hom_per_row[i] = sum(str_count(named.diploid[i,], "Hom")) #don't' divide bc its just the number of hom per row
+    }
+    
+    M1_per_col = numeric() #Homozygosity per column
+    M0_per_col = numeric()
+    maf = numeric() #allele frequency
+    EHom = numeric() #Expected Homozygosity
+    SEHOM = numeric()
+    for (b in 1:n.loci)
+    {
+      M1_per_col[b] = sum(str_count(shuffled.matrix[,b], "1")) #count all the 1 (=mutation, whereas 0 are the ancestral state) for each segsite
+      M0_per_col[b] = sum(str_count(shuffled.matrix[,b], "0"))
+      #count 1s and 0s and whichever is bigger, use this to calculate the next one. 
+      if (M1_per_col[b] >= M0_per_col[b]) { #this is basically saying is M1 bigger than M0, if it is use M0, if not use M1 (bc need MINOR AF)
+        maf[b]=M0_per_col[b]/nhap #number of less freqyent allele per column, divided by total number of rows (2*individuals), so maf per loci
+        EHom[b]=1-2*maf[b]*(1-maf[b])  
+      } else { 
+        maf[b]=M1_per_col[b]/nhap #number of hom per column, divided by total number of rows (2*individuals), so maf per loci
+        EHom[b]=1- ((2*maf[b])*(1-maf[b]))
+      }
+    }
+    
+    # SEHom = mean(EHom) #mean of expected homozygosity 
+    SEHom=sum(EHom)/(nhap/2)
+    Fh[,a]= (Hom_per_row-SEHom)/(n.loci-SEHom) #Fh as proxy for inbreeding
+    
+  } 
+  
+  
+  #count major + minor, and find the allele freq by dividing by nhap (no. of indivs), square + sum the two, then MAF formula for het. 
+}
+
+
+
+# Saving from loops of 50 gens -------------------------------------------------------------
+
+##NEED TO CHANGE THESE NUMBERS EVERY TIME YOU RUN THE LOOP (5, 10, 25, 50, 100, 250, 500)
+Fh.5.sim = Fh
+Fhmeans.5 = (colmeans(Fh.5.sim))
+Fhvars.5 = colVars(Fh.5.sim)
+
+
+
+
+# Saving from loops of 150 gens -------------------------------------------
+Fh150.5 = Fh
+fh150means.5= colMeans(fh150.5)
+
+
+
+# PLOTTING + ANALYSIS -----------------------------------------------------
+fhmeansgen1 = c(mean(Fhmeans.5),mean(Fhmeans.10), mean(Fhmeans.25), mean(Fhmeans.50), mean(Fhmeans.100), mean(Fhmeans.250), mean(Fhmeans.500))
+fhmeansgen2 = c(mean(fh150means.5), mean(fh150means.10), mean(fh150means.50), mean(fh150means.100), mean(fh150means.250), mean(fh150means.500))
+# Means of FH -------------------------------------------------------------
+#plot FH for 50 generations.
+fit.5 = locfit(~Fhmeans.5, alpha=0.9)
+fit.10 =locfit(~Fhmeans.10, alpha=0.9)
+fit.25 =locfit(~Fhmeans.25, alpha=0.9)
+fit.50 = locfit(~Fhmeans.50, alpha=0.9)
+fit.100 = locfit(~Fhmeans.100, alpha=0.9)
+fit.250 = locfit(~Fhmeans.250, alpha=0.9)
+fit.500 = locfit(~Fhmeans.500, alpha=0.9)
+layout(matrix(c(1, 2, 3, 4), nrow=2, byrow=TRUE))
+par(mar=rep(4,4))
+plot(NULL, xlim=c(0.3, 1), ylim=c(0,20), xlab="Mean Fh: 50", ylab="Density")
+lines(fit.5, col="deeppink", lwd=2)
+lines(fit.10, col="blueviolet", lwd=2)
+lines(fit.25, col="forestgreen", lwd=2)
+lines(fit.50, col="darkorange1", lwd=2)
+lines(fit.100, col="deepskyblue", lwd=2)
+lines(fit.250, col="gray48", lwd=2)
+lines(fit.500, col="black", lwd=2)
+colours=c("deeppink", "blueviolet", "forestgreen", "darkorange1", "deepskyblue", "gray48", "black")
+# legend("top", legend=c("5", "10", "25", "50", "100", "250", "500"), col=colours, cex=1, fill=colours, bty="n", title="Bottleneck Size", horiz=FALSE)
+abline(v=mean(fhmeansgen1), lty=4)
+
+#plot FH for 150 generations
+plot(NULL, xlim=c(0.3, 1), ylim=c(0,20), xlab="Mean Fh: 150", ylab="Density")
+lines(locfit(~fh150means.5, alpha=0.9), lwd=2, col="deeppink")
+lines(locfit(~fh150means.10, alpha=0.9), col="blueviolet" , lwd=2)
+lines(locfit(~fh150means.25, alpha=0.9) , col="forestgreen", lwd=2)
+lines(locfit(~fh150means.50, alpha=0.9), col="darkorange1", lwd=2)
+lines(locfit(~fh150means.100, alpha=0.9), col="deepskyblue", lwd=2)
+lines(locfit(~fh150means.250, alpha=0.9), col="gray48", lwd=2)
+lines(locfit(~fh150means.500, alpha=0.9), col="black", lwd=2)
+abline(v=mean(fhmeansgen2), lty=4)
+
+#zoom in
+plot(NULL, xlim=c(0.85, 1), ylim=c(0,20), xlab="Mean Fh: 50", ylab="Density")
+lines(fit.5, col="deeppink", lwd=2)
+lines(fit.10, col="blueviolet", lwd=2)
+lines(fit.25, col="forestgreen", lwd=2)
+lines(fit.50, col="darkorange1", lwd=2)
+lines(fit.100, col="deepskyblue", lwd=2)
+lines(fit.250, col="gray48", lwd=2)
+lines(fit.500, col="black", lwd=2)
+colours=c("deeppink", "blueviolet", "forestgreen", "darkorange1", "deepskyblue", "gray48", "black")
+abline(v=mean(fhmeansgen1), lty=4)
+# legend("top", legend=c("5", "10", "25", "50", "100", "250", "500"), col=colours, cex=1, fill=colours, bty="n", title="Bottleneck Size", horiz=TRUE)
+#plot FH for 150 generations
+plot(NULL, xlim=c(0.85, 1), ylim=c(0,20), xlab="Mean Fh: 150", ylab="Density")
+lines(locfit(~fh150means.5, alpha=0.9), lwd=2, col="deeppink")
+lines(locfit(~fh150means.10, alpha=0.9), col="blueviolet" , lwd=2)
+lines(locfit(~fh150means.25, alpha=0.9) , col="forestgreen", lwd=2)
+lines(locfit(~fh150means.50, alpha=0.9), col="darkorange1", lwd=2)
+lines(locfit(~fh150means.100, alpha=0.9), col="deepskyblue", lwd=2)
+lines(locfit(~fh150means.250, alpha=0.9), col="gray48", lwd=2)
+lines(locfit(~fh150means.500, alpha=0.9), col="black", lwd=2)
+abline(v=mean(fhmeansgen2), lty=4)
+
+#get legend on its own:
+plot(NULL, xlim=c(0.3, 1), ylim=c(0,20), xaxt="n", yaxt="n", ylab="1")
+legend(0.27, 5, legend=c("5", "10", "25", "50", "100", "250", "500"), col=colours, cex=0.95, bty="n", title="Bottleneck Size", horiz=TRUE, xpd=FALSE, pch=15)
+
+
+
+#Plot Fh boxplot for 50 gen and 150 gen so it shows all the range of values. 
+fhmeans1box = list(Fhmeans.5, Fhmeans.10, Fhmeans.25, Fhmeans.50, Fhmeans.100, Fhmeans.250, Fhmeans.500)
+fhmeansgen2box = list(fh150means.5, fh150means.10, fh150means.50, fh150means.100, fh150means.250, fh150means.500)
+par(mfrow=c(1,2))
+boxplot(fhmeans1box, ylim= c(0.3, 1), xaxt = "n", xlab='Founder size', ylab="Mean Fh over 50 generations")
+axis(1, at=1:7, labels=c("5","10","25","50","100", "250", "500"))
+boxplot(fhmeansgen2box, ylim= c(0.3, 1), xaxt = "n", xlab='Founder size', ylab=" Mean Fh Over 150 Generations")
+axis(1, at=1:7, labels=c("5","10","25","50","100", "250", "500"))
+
+
+par(mfrow=c(1,1))  #reset the graphs 
+
+
+
+
+# Analysis ----------------------------------------------------------------
+fhmeansA= c(Fhmeans.5, Fhmeans.10, Fhmeans.25, Fhmeans.50, Fhmeans.100, Fhmeans.250, Fhmeans.500)
+fhmeansB = c(fh150means.5, fh150means.10, fh150means.25, fh150means.50, fh150means.100, fh150means.250, fh150means.500)
+x.factor = as.factor(c(rep(5,1000), rep(10,1000),rep(25,1000), rep(50,1000), rep(100,1000), rep(250,1000), rep(500,1000)))
+
+#anova needs equal variances + normality of residuals
+#homoscedasticity = levenes; needs to be insignificant
+#QQ plot is of residuals and is normal if all the points are more or less on the line of best fit
+#Assume the dependent variable is y and the treatment codes are in the variable x. There are two ways to do a one-way ANOVA, using different functions. In each case I will output the results to an R object and then, with the function anova, ask for the ANOVA table to be extracted from that object. Method one: 
+#analysis for 50 generations
+AFH.data = data.frame(fhmeansA, x.factor) #make datafram where x is factor and y is numeric
+str(AFH.data)
+AFHaov.out = aov(fhmeansA~x.factor, data=AFH.data)
+plot(AFHaov.out,2) #homosecdasticity
+hist(resid(AFHaov.out)) #normal?
+leveneTest(fhmeansA~x.factor, data=AFH.data) #if insig; equal variances
+summary.lm(AFHaov.out) #if sig, run the tukey. 
+#FH.AOV = TukeyHSD (FHaov.out)
+#if not normal, run kruskal: 
+kruskal.test(fhmeansA~x.factor, data=AFH.data)
+#quote as Kruskal-Wallis χ2 = 1.64 d.f. = 2, P = 0.442.
+dunnTest(fhmeansA, x.factor)
+
+#analysis for 150 generations  (which are different from each other ; i.e. do bottle necks have a singificant affect on FH)
+BFH.data = data.frame(fhmeansB, x.factor) #make datafram where x is factor and y is numeric
+BFHaov.out = aov(fhmeansB~x.factor, data=BFH.data)
+plot(BFHaov.out,2) #homosecdasticity
+hist(resid(BFHaov.out)) #normal?
+library(car)
+leveneTest(fhmeansB~x.factor, data=BFH.data) #0.605 = insig; equal variances
+summary.lm(BFHaov.out) #if sig, run the tukey. 
+#FH.AOV = TukeyHSD (FHaov.out)
+#if not normal, run kruskal: 
+kruskal.test(fhmeansB~x.factor, data=BFH.data)
+dunnTest(fhmeansB, x.factor)
+
+#is FH significantly diffrent after 150 generations compared to after 50 generations
+yfh5 = c(Fhmeans.5, fh150means.5)
+t.factor5 = as.factor(c(rep(1,1000), rep(2,1000)))
+ttest5 = data.frame(yfh5, t.factor5)
+t.test(yfh5~t.factor5)
+#t tess require normaility: histogram + normailty of residuals
+leveneTest(yfh5~t.factor5, data=ttest5) #sig means non-equal 
+wilcox.test(yfh5~t.factor5)
+#result: W = 635420, p-value < 2.2e-16
+
+yfh10 = c(Fhmeans.10, fh150means.10)
+t.factor10 = as.factor(c(rep(1,1000), rep(2,1000)))
+ttest10 = data.frame(yfh10, t.factor10)
+wilcox.test(yfh10~t.factor10)
+#result: W = 631570, p-value < 2.2e-16
+
+yfh25 = c(Fhmeans.10, fh150means.10)
+t.factor25 = as.factor(c(rep(1,1000), rep(2,1000)))
+ttest25 = data.frame(yfh25, t.factor25)
+wilcox.test(yfh25~t.factor25)
+#result: W = 631570, p-value < 2.2e-16
+
+yfh50 = c(Fhmeans.50, fh150means.50)
+t.factor50 = as.factor(c(rep(1,1000), rep(2,1000)))
+ttest50 = data.frame(yfh50, t.factor50)
+wilcox.test(yfh50~t.factor50)
+#result: W = 665270, p-value < 2.2e-16
+
+yfh100 = c(Fhmeans.100, fh150means.100)
+t.factor100 = as.factor(c(rep(1,1000), rep(2,1000)))
+ttest100 = data.frame(yfh100, t.factor100)
+wilcox.test(yfh100~t.factor100)
+#W = 673670, p-value < 2.2e-16
+
+yfh250 = c(Fhmeans.250, fh150means.250)
+t.factor250 = as.factor(c(rep(1,1000), rep(2,1000)))
+ttest250 = data.frame(yfh250, t.factor250)
+wilcox.test(yfh250~t.factor250)
+# W = 701140, p-value < 2.2e-16
+
+yfh500 = c(Fhmeans.500, fh150means.500)
+t.factor500 = as.factor(c(rep(1,1000), rep(2,1000)))
+ttest500 = data.frame(yfh500, t.factor500)
+wilcox.test(yfh500~t.factor500)
+#W = 706380, p-value < 2.2e-16
+
+
